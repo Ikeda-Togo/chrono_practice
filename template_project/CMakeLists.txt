@@ -18,6 +18,12 @@ cmake_minimum_required(VERSION 3.10)
 
 project(my_project)
 
+SET(DEMOS
+    demo_IRR_motors
+    demo_IRR_tracks
+    simple_motor_test
+)
+
 #--------------------------------------------------------------
 # === 2 ===
 # Find the Chrono package and any REQUIRED or OPTIONAL modules
@@ -133,9 +139,9 @@ endif()
 # files in your project. 
 #--------------------------------------------------------------
 
-add_executable(track_exe demo_IRR_tracks.cpp)
-add_executable(motor_exe demo_IRR_motors.cpp)
-add_executable(imu_exe demo_SEN_GPSIMU.cpp)
+FOREACH(PROGRAM ${DEMOS})
+
+    ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
 
 
 #--------------------------------------------------------------
@@ -147,29 +153,32 @@ add_executable(imu_exe demo_SEN_GPSIMU.cpp)
 # install tree (if using an installed version of Chrono).
 #--------------------------------------------------------------
 
-set_target_properties(imu_exe PROPERTIES 
+
+
+    set_target_properties(${PROGRAM} PROPERTIES 
 	    COMPILE_FLAGS "${CHRONO_CXX_FLAGS} ${EXTRA_COMPILE_FLAGS}"
 	    COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
 	    LINK_FLAGS "${CHRONO_LINKER_FLAGS}")
 
-set_target_properties(track_exe PROPERTIES 
-	    COMPILE_FLAGS "${CHRONO_CXX_FLAGS} ${EXTRA_COMPILE_FLAGS}"
-	    COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
-	    LINK_FLAGS "${CHRONO_LINKER_FLAGS}")
+#set_target_properties(track_exe PROPERTIES 
+#	    COMPILE_FLAGS "${CHRONO_CXX_FLAGS} ${EXTRA_COMPILE_FLAGS}"
+#	    COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
+#	    LINK_FLAGS "${CHRONO_LINKER_FLAGS}")
 
-set_target_properties(motor_exe PROPERTIES 
-	    COMPILE_FLAGS "${CHRONO_CXX_FLAGS} ${EXTRA_COMPILE_FLAGS}"
-	    COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
-	    LINK_FLAGS "${CHRONO_LINKER_FLAGS}")
+#set_target_properties(motor_exe PROPERTIES 
+#	    COMPILE_FLAGS "${CHRONO_CXX_FLAGS} ${EXTRA_COMPILE_FLAGS}"
+#	    COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
+#	    LINK_FLAGS "${CHRONO_LINKER_FLAGS}")
 
 #--------------------------------------------------------------
 # Link to Chrono libraries and dependency libraries
 #--------------------------------------------------------------
+    
+    target_link_libraries(${PROGRAM} ${CHRONO_LIBRARIES})
+#target_link_libraries(track_exe ${CHRONO_LIBRARIES})
+#target_link_libraries(motor_exe ${CHRONO_LIBRARIES})
 
-target_link_libraries(imu_exe ${CHRONO_LIBRARIES})
-target_link_libraries(track_exe ${CHRONO_LIBRARIES})
-target_link_libraries(motor_exe ${CHRONO_LIBRARIES})
-
+ENDFOREACH()
 #--------------------------------------------------------------
 # === 4 (OPTIONAL) ===
 # 

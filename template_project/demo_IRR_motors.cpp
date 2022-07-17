@@ -97,7 +97,8 @@ void CreateStatorRotor(std::shared_ptr<ChBody>& mstator,
 
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
-
+    GetLog() << "CH_C_PI: " << CH_C_PI << "\n\n";
+    
     // Create a ChronoENGINE physical system
     ChSystemNSC mphysicalSystem;
     mphysicalSystem.SetCollisionSystemType(collision_type);
@@ -111,7 +112,7 @@ int main(int argc, char* argv[]) {
     floorBody->SetBodyFixed(true);
     mphysicalSystem.Add(floorBody);
 
-    auto mtexture = chrono_types::make_shared<ChTexture>();
+    auto mtexture = std::make_shared<ChTexture>();
     mtexture->SetTextureFilename(GetChronoDataFile("textures/blue.png"));
     floorBody->AddAsset(mtexture);
 
@@ -151,7 +152,7 @@ int main(int argc, char* argv[]) {
 
     // Create a ChFunction to be used for the ChLinkMotorRotationSpeed
     auto mwspeed =
-        chrono_types::make_shared<ChFunction_Const>(CH_C_PI_2);  // constant angular speed, in [rad/s], 1PI/s =180°/s
+        chrono_types::make_shared<ChFunction_Const>(CH_C_PI_2);  // constant angular speed, in [rad/s], 1PI/s =180ï¿½/s
     // Let the motor use this motion function:
     rotmotor1->SetSpeedFunction(mwspeed);
 
@@ -824,6 +825,7 @@ int main(int argc, char* argv[]) {
     application.SetTryRealtime(true);
 
     while (application.GetDevice()->run()) {
+        
         application.BeginScene(true, true, video::SColor(255, 140, 161, 192));
 
         application.DrawAll();
@@ -832,6 +834,7 @@ int main(int argc, char* argv[]) {
         // for example use a clamped sinusoid, just for fun:
         double t = mphysicalSystem.GetChTime();
         double Sp = ChMin(ChMax(2.6 * sin(t * 1.8), -1.4), 1.4);
+        //std::cout << msineangle->Get_y(t) << std::endl;
         motor6setpoint->SetSetpoint(Sp, t);
 
         application.DoStep();

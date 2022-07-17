@@ -44,6 +44,8 @@ using namespace irr::video;
 using namespace irr::io;
 using namespace irr::gui;
 
+collision::ChCollisionSystemType collision_type = collision::ChCollisionSystemType::BULLET;
+
 // First of all, define a class for the 'tank' (that is, a set of
 // bodies and links which are grouped within this class; so it is
 // easier to manage data structures in this example).
