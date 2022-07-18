@@ -22,6 +22,9 @@ SET(DEMOS
     demo_IRR_motors
     demo_IRR_tracks
     simple_motor_test
+    simple_sensor_test
+    flipper_test
+    flipper_test2
 )
 
 #--------------------------------------------------------------

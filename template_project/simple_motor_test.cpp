@@ -5,6 +5,7 @@
 #include "chrono/motion_functions/ChFunction_Const.h"
 #include "chrono/physics/ChLinkMotorRotationAngle.h"
 #include "chrono/physics/ChLinkMotorRotationSpeed.h"
+#include "chrono/physics/ChLinkMotorRotationTorque.h"
 #include "chrono_irrlicht/ChIrrApp.h"
 
 // Use the namespaces of Chrono
@@ -26,8 +27,10 @@ void CreateStatorRotor(std::shared_ptr<ChBody>& mstator,
     std::shared_ptr<ChMaterialSurface> material,
     ChSystem& msystem,
     const ChVector<>& mpos) {
-    mstator = chrono_types::make_shared<ChBodyEasyCylinder>(0.5, 0.1, 1000, material, collision_type);
+    //mstator = chrono_types::make_shared<ChBodyEasyCylinder>(0.5, 0.1, 1000, material, collision_type);
+    mstator = chrono_types::make_shared<ChBodyEasyBox>(1, 0.1, 1, 3000, material, collision_type);
     mstator->SetPos(mpos);
+    mstator->SetCollide(false);
     mstator->SetRot(Q_from_AngAxis(CH_C_PI_2, VECT_X));
     mstator->SetBodyFixed(false);
     msystem.Add(mstator);
@@ -37,8 +40,8 @@ void CreateStatorRotor(std::shared_ptr<ChBody>& mstator,
     texture->SetTextureFilename(GetChronoDataFile("bluewhite.png"));
     mstator->AddAsset(texture);
 
-    mrotor = chrono_types::make_shared<ChBodyEasyBox>(2, 0.1, 0.1, 1000, material, collision_type);
-    mrotor->SetPos(mpos + ChVector<>(0.5, 0, -2.15));
+    mrotor = chrono_types::make_shared<ChBodyEasyBox>(2, 0.1, 0.1, 10000, material, collision_type);
+    mrotor->SetPos(mpos + ChVector<>(1, 0, -0.15));
     msystem.Add(mrotor);
 
     auto mcolor = chrono_types::make_shared<ChColorAsset>(0.6f, 0.6f, 0.0f);
@@ -74,7 +77,7 @@ public:
             case EGET_SCROLL_BAR_CHANGED:
                 if (id == 101) {  // id of 'throttleL' slider..
                     s32 pos = ((IGUIScrollBar*)event.GUIEvent.Caller)->getPos();
-                    *mangle = CH_C_PI*pos/100;
+                    *mangle = CH_C_PI*pos/50;
                     
                     return true;
                 }
@@ -110,6 +113,7 @@ int main(int argc, char* argv[]) {
     // Contact material shared among all objects
     auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     double angle = 0.0;
+    double torque = 0.0;
 
     // Create a floor that is fixed (that is used also to represent the absolute reference)
     auto floorBody = chrono_types::make_shared<ChBodyEasyBox>(20, 2, 20, 3000, material, collision_type);
@@ -121,8 +125,14 @@ int main(int argc, char* argv[]) {
     mtexture->SetTextureFilename(GetChronoDataFile("textures/blue.png"));
     floorBody->AddAsset(mtexture);
 
+    auto box = chrono_types::make_shared<ChBodyEasyBox>(2, 2, 2, 30000, material, collision_type);
+    box->SetPos(ChVector < >(0,0,0));
+    box->SetMass(100);
+    box->SetBodyFixed(false);
+    mphysicalSystem.Add(box);
 
-    ChVector<> positionA2(-3, 2, -2);
+
+    ChVector<> positionA2(0, 0, -1);
     std::shared_ptr<ChBody> stator2;
     std::shared_ptr<ChBody> rotor2;
     CreateStatorRotor(stator2, rotor2, material, mphysicalSystem, positionA2);
@@ -137,8 +147,12 @@ int main(int argc, char* argv[]) {
     );
     mphysicalSystem.Add(rotmotor2);
 
+
+    GetLog() << "get pos: " << rotor2->GetPos() << "\n\n";
+
     // Create a ChFunction to be used for the ChLinkMotorRotationAngle
     auto msineangle = chrono_types::make_shared<ChFunction_Const>(1.5);       // phase [rad]
+    auto motor_fun = chrono_types::make_shared<ChFunction_Setpoint>();
 
     //auto msineangle = chrono_types::make_shared<ChFunction_Sine>(0,       // phase [rad]
     //    0.05,    // frequency [Hz]
@@ -146,7 +160,43 @@ int main(int argc, char* argv[]) {
     //    );
 
     // Let the motor use this motion function as a motion profile:
-    rotmotor2->SetAngleFunction(msineangle);
+    rotmotor2->SetAngleFunction(motor_fun);
+
+
+    std::shared_ptr<ChLinkLockRevolute> link1;
+    link1 = chrono_types::make_shared<ChLinkLockRevolute>();
+    link1->Initialize(stator2, box, ChCoordsys<>(ChVector<>(1,1,1), QUNIT));
+    link1->Lock(true);
+    mphysicalSystem.AddLink(link1);
+
+    //
+    //----Torque test
+    //
+
+    //ChVector<> positionA3(-3, 2, -1);
+    //std::shared_ptr<ChBody> stator3;
+    //std::shared_ptr<ChBody> rotor3;
+    //CreateStatorRotor(stator3, rotor3, material, mphysicalSystem, positionA3);
+    //stator3->SetBodyFixed(true);
+    //rotor3->SetMass(10);
+
+    //// Create the motor
+    //auto rotmotor3 = chrono_types::make_shared<ChLinkMotorRotationTorque>();
+
+    //// Connect the rotor and the stator and add the motor to the system:
+    //rotmotor3->Initialize(rotor3,                // body A (slave)
+    //    stator3,               // body B (master)
+    //    ChFrame<>(positionA3)  // motor frame, in abs. coords
+    //);
+    //mphysicalSystem.Add(rotmotor3);
+
+    //// The torque(time) function:
+    //auto mtorquetime = chrono_types::make_shared<ChFunction_Const>(1.5);
+
+    //// Let the motor use this motion function as a motion profile:
+    //rotmotor3->SetTorqueFunction(mtorquetime);
+
+    //-------------------------------------------------------------------------------------------------
 
     // Create the Irrlicht visualization (open the Irrlicht device,
     // bind a simple user interface, etc. etc.)
@@ -198,8 +248,19 @@ int main(int argc, char* argv[]) {
         // Example B.6 requires the setpoint to be changed in the simulation loop:
         // for example use a clamped sinusoid, just for fun:
         double t = mphysicalSystem.GetChTime();
-        std::cout << msineangle->Get_y(t) << ":"<< t << std::endl;
+        //torque = rotmotor3->GetMotorRotPeriodic();
+        if (torque < 0)torque = 2 * CH_C_PI + torque;
+        torque = angle - torque;
+        
+        if (torque < -CH_C_PI) torque += 2 * CH_C_PI;
+        else if (torque > CH_C_PI) torque += -2 * CH_C_PI;
+
+        if (abs(torque) > 0.2) torque = torque * 10000;
+
+        std::cout << angle << ":"<<torque << std::endl;
         msineangle->Set_yconst(angle);
+        motor_fun->SetSetpoint(angle, 0.5);
+        //mtorquetime->Set_yconst(torque);
 
 
         application.DoStep();
