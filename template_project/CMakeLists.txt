@@ -25,6 +25,7 @@ SET(DEMOS
     simple_sensor_test
     flipper_test
     flipper_test2
+    stl_load_test
 )
 
 #--------------------------------------------------------------

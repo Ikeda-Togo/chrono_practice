@@ -613,6 +613,7 @@ private:
 int main(int argc, char* argv[]) {
     SetChronoDataPath(CHRONO_DATA_DIR);
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
+    GetLog() << GetChronoDataFile("models/bulldozer/wheel_view.obj").c_str() << "\n";
 
     // 1- Create a ChronoENGINE physical system: all bodies and constraints
     //    will be handled by this ChSystemNSC object.
@@ -639,24 +640,24 @@ int main(int argc, char* argv[]) {
     auto ground_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     ground_mat->SetFriction(1.0);
 
-    auto my_ground = chrono_types::make_shared<ChBodyEasyBox>(60, 2, 60, 1000, true, true, ground_mat);
+    auto my_ground = chrono_types::make_shared<ChBodyEasyBox>(20, 2, 20, 1000, true, true, ground_mat);
     my_ground->SetPos(ChVector<>(0, -1, 0));
     my_ground->SetBodyFixed(true);
     my_ground->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/blue.png")));
     my_system.AddBody(my_ground);
 
-    // ..some obstacles on the ground:
-    auto obst_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    //// ..some obstacles on the ground:
+    //auto obst_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
 
-    for (int i = 0; i < 30; i++) {
-        auto my_obstacle = chrono_types::make_shared<ChBodyEasyBox>(
-            0.6 * (1 - 0.4 * ChRandom()), 0.08, 0.3 * (1 - 0.4 * ChRandom()), 1000, true, true, obst_mat);
-        my_obstacle->SetMass(1);
-        //my_obstacle->SetPos(ChVector<>(-6 + 6 * ChRandom(), 2 + 1 * ChRandom(), 6 * ChRandom()));
-        my_obstacle->SetPos(ChVector<>(-6 + 6 * ChRandom(), 2, 6 * ChRandom()));
-        my_obstacle->SetRot(Q_from_AngAxis(ChRandom() * CH_C_PI, VECT_Y));
-        my_system.AddBody(my_obstacle);
-    }
+    //for (int i = 0; i < 30; i++) {
+    //    auto my_obstacle = chrono_types::make_shared<ChBodyEasyBox>(
+    //        0.6 * (1 - 0.4 * ChRandom()), 0.08, 0.3 * (1 - 0.4 * ChRandom()), 1000, true, true, obst_mat);
+    //    my_obstacle->SetMass(1);
+    //    //my_obstacle->SetPos(ChVector<>(-6 + 6 * ChRandom(), 2 + 1 * ChRandom(), 6 * ChRandom()));
+    //    my_obstacle->SetPos(ChVector<>(-6 + 6 * ChRandom(), 2, 6 * ChRandom()));
+    //    my_obstacle->SetRot(Q_from_AngAxis(ChRandom() * CH_C_PI, VECT_Y));
+    //    my_system.AddBody(my_obstacle);
+    //}
 
     // ..the tank (this class - see above - is a 'set' of bodies and links, automatically added at creation)
     MySimpleTank* mytank = new MySimpleTank(my_system, application.GetSceneManager(), application.GetVideoDriver());
@@ -671,6 +672,7 @@ int main(int argc, char* argv[]) {
 
     // Create the motor
     auto rotmotor2 = chrono_types::make_shared<ChLinkMotorRotationAngle>();
+    rotor2->SetMass(100);
 
     // Connect the rotor and the stator and add the motor to the system:
     rotmotor2->Initialize(rotor2,                // body A (slave)
@@ -681,6 +683,22 @@ int main(int argc, char* argv[]) {
 
     auto motor_fun = chrono_types::make_shared<ChFunction_Setpoint>();
     rotmotor2->SetAngleFunction(motor_fun);
+
+    //-------------
+    //left flipper
+    //-------------
+
+    auto Lflipper = chrono_types::make_shared<ChBodyEasyMesh>(               //
+        "C:/Users/syuug/Documents/GitHub/chrono_practice/obj/flipper-left.obj",  // data file
+        1000,                                                          // density
+        true,                                                         // do not compute mass and inertia
+        true,                                                          // visualization?
+        true,                                                         // collision?
+        chrono_types::make_shared<ChMaterialSurfaceNSC>(),                                                       // no need for contact material
+        0.005);                                                            // mesh sweep sphere radius
+    my_system.AddBody(Lflipper);
+
+    Lflipper->SetPos(ChVector<>(5, 5, 5));
 
     // -----------------------
     // Create a sensor manager
@@ -798,9 +816,6 @@ int main(int argc, char* argv[]) {
         application.DrawAll();
 
 
-  
-
-
 
         // .. draw also a grid (rotated so that it's horizontal)
         tools::drawGrid(application.GetVideoDriver(), 2, 2, 30, 30,
@@ -817,7 +832,7 @@ int main(int argc, char* argv[]) {
             bufferMag->LaunchedCount > imu_last_launch) {
             AccelData acc_data = bufferAcc->Buffer[0];
             GyroData gyro_data = bufferGyro->Buffer[0];
-            printf("%0.4f %0.4f %0.4f \n", acc_data.X,acc_data.Y,acc_data.Z);
+            //printf("%0.4f %0.4f %0.4f \n", acc_data.X,acc_data.Y,acc_data.Z);
             //std::cout << acc_data.X << " : " << acc_data.Y << " : " << acc_data.Z << " : " << std::endl;
             //std::cout << gyro_data.Roll << " : " << gyro_data.Pitch << " : " << gyro_data.Yaw << " : " << std::endl;
             imu_last_launch = bufferMag->LaunchedCount;
