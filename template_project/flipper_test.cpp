@@ -29,14 +29,25 @@
 #include "chrono/motion_functions/ChFunction_Const.h"
 #include "chrono/physics/ChLinkMotorRotationAngle.h"
 #include "chrono/physics/ChSystemNSC.h"
+#include "chrono_thirdparty/filesystem/path.h"
+#include "chrono/utils/ChUtilsInputOutput.h"
+
+#include "chrono_sensor/sensors/ChNoiseModel.h"
+#include "chrono_sensor/sensors/ChIMUSensor.h"
+#include "chrono_sensor/ChSensorManager.h"
+#include "chrono_sensor/filters/ChFilterAccess.h"
+#include "chrono_sensor/filters/ChFilterVisualize.h"
 
 #include "chrono_irrlicht/ChIrrApp.h"
 #include "chrono_irrlicht/ChIrrMeshTools.h"
+
+#include "random_step.h"
 
 // Use the namespaces of Chrono
 using namespace chrono;
 using namespace chrono::geometry;
 using namespace chrono::irrlicht;
+using namespace chrono::sensor;
 
 // Use the main namespaces of Irrlicht
 using namespace irr;
@@ -45,6 +56,34 @@ using namespace irr::scene;
 using namespace irr::video;
 using namespace irr::io;
 using namespace irr::gui;
+
+
+//random step type 
+enum StepType {
+    RANDOM,
+    SIN,
+    STEP
+};
+
+// -----------------------------------------------------------------------------
+// IMU parameters
+// -----------------------------------------------------------------------------
+// Noise model attached to the sensor
+enum IMUNoiseModel {
+    NORMAL_DRIFT,  // gaussian drifting noise with noncorrelated equal distributions
+    IMU_NONE       // no noise added
+};
+IMUNoiseModel imu_noise_type = IMU_NONE;
+
+// IMU update rate in Hz
+int imu_update_rate = 100;
+
+// IMU lag (in seconds) between sensing and when data becomes accessible
+float imu_lag = 0;
+
+// IMU collection time (in seconds) of each sample
+float imu_collection_time = 0;
+
 
 collision::ChCollisionSystemType collision_type = collision::ChCollisionSystemType::BULLET;
 
@@ -126,31 +165,26 @@ public:
 
         // --- The tank body ---
 
-        //truss = chrono_types::make_shared<ChBodyEasyMesh>(                   //
-        //    GetChronoDataFile("models/bulldozer/bulldozerB10.obj").c_str(),  // file name
-        //    1000,                                                            // density
-        //    false,                                                           // do not evaluate mass automatically
-        //    true,                                                            // create visualization asset
-        //    false,                                                           // do not collide
-        //    nullptr,                                                         // no need for contact material
-        //    0                                                                // swept sphere radius
-        //);
+        auto load_truss = chrono_types::make_shared<ChBodyEasyMesh>(               //
+            "C:/Users/syuug/Documents/GitHub/chrono_practice/obj/truss.obj",  // data file
+            1000,                                                          // density
+            true,                                                         // do not compute mass and inertia
+            true,                                                          // visualization?
+            true,                                                         // collision?
+            chrono_types::make_shared<ChMaterialSurfaceNSC>(),                                                       // no need for contact material
+            0.005);                                                            // mesh sweep sphere radius
+        //my_system.AddBody(Lflipper);
+        load_truss->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, rlwidth / 2));
+        load_truss->SetMass(350);
 
-        //my_system.Add(truss);
-        //truss->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, rlwidth / 2));
-        //truss->SetMass(350);
-        //truss->SetInertiaXX(ChVector<>(13.8, 13.5, 10));
 
-        truss = std::make_shared<ChBodyEasyBox>(1.6, 0.6, rlwidth - 0.4,  // x, y, z dimensions
-            1000,       // density
-            false,       // create visualization asset
-            false       // no collision geometry
-            );
-        truss->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, rlwidth / 2));
-        //truss->SetMass(350);
-        truss->SetInertiaXX(ChVector<>(13.8, 13.5, 10));
+        truss = load_truss;
 
         my_system.Add(truss);
+
+        //auto color_truss = chrono_types::make_shared<ChColorAsset>();
+        //color_truss->SetColor(ChColor(1.0f, 0.2f, 0.2f));
+        //truss->AddAsset(color_truss);
 
 
         // --- Contact material for wheels ---
@@ -546,7 +580,7 @@ public:
             collision_type       // no collision geometry
             );
         trussR->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, mz + 0.2));
-        //truss->SetMass(350);
+        trussR->SetMass(150);
 
         my_system.Add(trussR);
 
@@ -557,7 +591,7 @@ public:
             collision_type       // no collision geometry
             );
         trussL->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, mz + rlwidth -0.2));
-        //truss->SetMass(350);
+        trussL->SetMass(150);
 
         my_system.Add(trussL);
 
@@ -892,6 +926,7 @@ public:
 
 class MyEventReceiver : public IEventReceiver {
 public:
+    s32 pos_speed = 50, pos_handle = 50;
     MyEventReceiver(ChIrrAppInterface* myapp, MySimpleTank* atank, MySimpleFlipper* aflipper, double* angle) {
         // store pointer application
         application = myapp;
@@ -900,13 +935,14 @@ public:
         mflipper = aflipper;
         mangle = angle;
 
+
         // ..add a GUI slider to control throttle left via mouse
         scrollbar_throttleL =
             application->GetIGUIEnvironment()->addScrollBar(true, rect<s32>(510, 20, 650, 35), 0, 101);
         scrollbar_throttleL->setMax(100);
         scrollbar_throttleL->setPos(50);
         text_throttleL =
-            application->GetIGUIEnvironment()->addStaticText(L"Left throttle ", rect<s32>(650, 20, 750, 35), false);
+            application->GetIGUIEnvironment()->addStaticText(L"Speed ", rect<s32>(650, 20, 750, 35), false);
 
         // ..add a GUI slider to control gas throttle right via mouse
         scrollbar_throttleR =
@@ -914,7 +950,7 @@ public:
         scrollbar_throttleR->setMax(100);
         scrollbar_throttleR->setPos(50);
         text_throttleR =
-            application->GetIGUIEnvironment()->addStaticText(L"Right throttle", rect<s32>(650, 45, 750, 60), false);
+            application->GetIGUIEnvironment()->addStaticText(L"handle", rect<s32>(650, 45, 750, 60), false);
         
         // ..add a GUI slider to control throttle left via mouse
         scrollbar_flipper =
@@ -929,29 +965,57 @@ public:
         // check if user moved the sliders with mouse..
         if (event.EventType == EET_GUI_EVENT) {
             s32 id = event.GUIEvent.Caller->getID();
+            
 
             switch (event.GUIEvent.EventType) {
             case EGET_SCROLL_BAR_CHANGED:
                 if (id == 101) {  // id of 'throttleL' slider..
-                    s32 pos = ((IGUIScrollBar*)event.GUIEvent.Caller)->getPos();
-                    double newthrottle = ((double)(pos)-50) / 50.0;
-                    this->mtank->throttleL = newthrottle;
-                    this->mflipper->throttleL = newthrottle;
+                    pos_speed = ((IGUIScrollBar*)event.GUIEvent.Caller)->getPos();
+                    double newthrottleL = ((double)(pos_speed)-50) / 50.0;
+                    double newthrottleR = newthrottleL;
+                    newthrottleL = newthrottleL- (((double)(pos_handle)-50) / 50.0);
+                    newthrottleR = newthrottleR + (((double)(pos_handle)-50) / 50.0);
+
+                    this->mtank->throttleL = newthrottleL;
+                    this->mflipper->throttleL = newthrottleL;
                     auto mfun = std::static_pointer_cast<ChFunction_Const>(mtank->link_motorLB->GetSpeedFunction());
-                    mfun->Set_yconst(newthrottle * 6);
+                    mfun->Set_yconst(newthrottleL * 6);
                     mfun = std::static_pointer_cast<ChFunction_Const>(mflipper->link_motorLB->GetSpeedFunction());
-                    mfun->Set_yconst(newthrottle * 6);
+                    mfun->Set_yconst(newthrottleL * 6);
+
+                    this->mtank->throttleR = newthrottleR;
+                    this->mflipper->throttleR = newthrottleR;
+
+                    mfun = std::static_pointer_cast<ChFunction_Const>(mtank->link_motorRB->GetSpeedFunction());
+                    mfun->Set_yconst(newthrottleR * 6);
+                    mfun = std::static_pointer_cast<ChFunction_Const>(mflipper->link_motorRB->GetSpeedFunction());
+                    mfun->Set_yconst(newthrottleR * 6);
+
+
                     return true;
                 }
                 if (id == 102) {  // id of 'throttleR' slider..
-                    s32 pos = ((IGUIScrollBar*)event.GUIEvent.Caller)->getPos();
-                    double newthrottle = ((double)(pos)-50) / 50.0;
-                    this->mtank->throttleR = newthrottle;
-                    this->mflipper->throttleR = newthrottle;
-                    auto mfun = std::static_pointer_cast<ChFunction_Const>(mtank->link_motorRB->GetSpeedFunction());
-                    mfun->Set_yconst(newthrottle * 6);
+                    pos_handle = ((IGUIScrollBar*)event.GUIEvent.Caller)->getPos();
+                    double newthrottleL = ((double)(pos_speed)-50) / 50.0;
+                    double newthrottleR = newthrottleL;
+                    newthrottleL = newthrottleL - (((double)(pos_handle)-50) / 50.0);
+                    newthrottleR = newthrottleR + (((double)(pos_handle)-50) / 50.0);
+
+                    this->mtank->throttleL = newthrottleL;
+                    this->mflipper->throttleL = newthrottleL;
+                    auto mfun = std::static_pointer_cast<ChFunction_Const>(mtank->link_motorLB->GetSpeedFunction());
+                    mfun->Set_yconst(newthrottleL * 6);
+                    mfun = std::static_pointer_cast<ChFunction_Const>(mflipper->link_motorLB->GetSpeedFunction());
+                    mfun->Set_yconst(newthrottleL * 6);
+
+                    this->mtank->throttleR = newthrottleR;
+                    this->mflipper->throttleR = newthrottleR;
+
+                    mfun = std::static_pointer_cast<ChFunction_Const>(mtank->link_motorRB->GetSpeedFunction());
+                    mfun->Set_yconst(newthrottleR * 6);
                     mfun = std::static_pointer_cast<ChFunction_Const>(mflipper->link_motorRB->GetSpeedFunction());
-                    mfun->Set_yconst(newthrottle * 6);
+                    mfun->Set_yconst(newthrottleR * 6);
+
                     return true;
                 }
                 if (id == 103) {  // id of 'throttleL' slider..
@@ -1002,7 +1066,7 @@ int main(int argc, char* argv[]) {
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
-    application.AddTypicalCamera(core::vector3df(0, 1, -1), core::vector3df(0, 0, 0));
+    application.AddTypicalCamera(core::vector3df(-3, 10, -5), core::vector3df(0, 0, 0));
 
     // 2- Create the rigid bodies of the simpified tank suspension mechanical system
     //   maybe setting position/mass/inertias of
@@ -1033,15 +1097,20 @@ int main(int argc, char* argv[]) {
     //    my_system.AddBody(my_obstacle);
     //}
 
+    //------------------------------------------
+    // create robot model
+    //------------------------------------------
+    //
     // ..the tank (this class - see above - is a 'set' of bodies and links, automatically added at creation)
-    MySimpleTank* mytank = new MySimpleTank(my_system, application.GetSceneManager(), application.GetVideoDriver(), 0, 0.5);
+    double model_height = 5;
+    MySimpleTank* mytank = new MySimpleTank(my_system, application.GetSceneManager(), application.GetVideoDriver(), 0, model_height);
     ChVector<> center_pos = mytank->wheelLB->GetPos() - mytank->wheelLF->GetPos();
     MySimpleFlipper* myflipper = new MySimpleFlipper(
         my_system,
         application.GetSceneManager(),
         application.GetVideoDriver(),
         -1,
-         0.5, 
+         model_height, 
         -0.4
     );
 
@@ -1071,16 +1140,101 @@ int main(int argc, char* argv[]) {
 
     //auto motor_fun = chrono_types::make_shared<ChFunction_Setpoint>();
     rotmotor2->SetAngleFunction(motor_fun);
+
+
+    // -----------------------
+    // Create a sensor manager
+    // -----------------------
+    auto manager = chrono_types::make_shared<ChSensorManager>(&my_system);
+
+    // ---------------------------------------------
+    // Create a IMU and add it to the sensor manager
+    // ---------------------------------------------
+    // Create the imu noise model
+    std::shared_ptr<ChNoiseModel> acc_noise_model;
+    std::shared_ptr<ChNoiseModel> gyro_noise_model;
+    std::shared_ptr<ChNoiseModel> mag_noise_model;
+
+    acc_noise_model = chrono_types::make_shared<ChNoiseNone>();
+    gyro_noise_model = chrono_types::make_shared<ChNoiseNone>();
+    mag_noise_model = chrono_types::make_shared<ChNoiseNone>();
+
+    auto imu_offset_pose = chrono::ChFrame<double>({ 0, 0, 0 }, Q_from_AngAxis(0, { 1, 0, 0 }));
+    auto acc = chrono_types::make_shared<ChAccelerometerSensor>(myflipper->trussR,    // body to which the IMU is attached
+        imu_update_rate,   // update rate
+        imu_offset_pose,   // offset pose from body
+        acc_noise_model);  // IMU noise model
+    acc->SetName("IMU - Accelerometer");
+    acc->SetLag(imu_lag);
+    acc->SetCollectionWindow(imu_collection_time);
+    acc->PushFilter(chrono_types::make_shared<ChFilterAccelAccess>());  // Add a filter to access the imu data
+    manager->AddSensor(acc);                                            // Add the IMU sensor to the sensor manager
+
+    auto gyro = chrono_types::make_shared<ChGyroscopeSensor>(myflipper->trussR,     // body to which the IMU is attached
+        imu_update_rate,    // update rate
+        imu_offset_pose,    // offset pose from body
+        gyro_noise_model);  // IMU noise model
+    gyro->SetName("IMU - Accelerometer");
+    gyro->SetLag(imu_lag);
+    gyro->SetCollectionWindow(imu_collection_time);
+    gyro->PushFilter(chrono_types::make_shared<ChFilterGyroAccess>());  // Add a filter to access the imu data
+    manager->AddSensor(gyro);                                           // Add the IMU sensor to the sensor manager
+
+    UserAccelBufferPtr bufferAcc;
+    UserGyroBufferPtr bufferGyro;
+
+    int imu_last_launch = 0;
+
+    // -----------------
+    // Initialize output
+    // -----------------
+    
+    // Output directories
+    const std::string out_dir = "SENSOR_OUTPUT/";
+
+    std::string imu_file = out_dir + "imu/";
+
+    if (!filesystem::create_directory(filesystem::path(imu_file))) {
+        std::cout << "Error creating directory " << imu_file << std::endl;
+        return 1;
+    }
+
+    imu_file += "pendulum_leg_1.csv";
+    utils::CSV_writer imu_csv(",");
+
+
     
     std::cout << "center pos is" << mytank->truss->GetPos() << std::endl;
     std::cout << "center flipper is" << (myflipper->trussL->GetPos().z() + myflipper->trussR->GetPos().z())/2<< std::endl;
 
+    //---------------------
+    // cleate field ofject
+    //--------------------
 
-    auto box = chrono_types::make_shared<ChBodyEasyBox>(0.02, 2, 0.02, 30000, chrono_types::make_shared<ChMaterialSurfaceNSC>(), collision_type);
-    box->SetPos(center_pos);
-    box->SetCollide(false);
-    box->SetBodyFixed(true);
-    my_system.Add(box);
+    StepType step_type = SIN;
+    RandomStep* myrandomstep = new RandomStep(my_system, step_type);
+
+    //auto obj_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    //obj_mat->SetFriction(1.0);
+    //auto box = chrono_types::make_shared<ChBodyEasyBox>(1, 0.5, 3, 30000, true, true, obj_mat);
+    //box->SetPos(ChVector<>(-2,0.25,0));
+    ////box->SetCollide(true);
+    //box->SetBodyFixed(true);
+    //my_system.Add(box);
+
+
+    //auto slope = chrono_types::make_shared<ChBodyEasyMesh>(               //
+    //    "C:/Users/syuug/Documents/GitHub/chrono_practice/obj/step.obj",  // data file
+    //    1000,                                                          // density
+    //    true,                                                         // do not compute mass and inertia
+    //    true,                                                          // visualization?
+    //    true,                                                         // collision?
+    //    chrono_types::make_shared<ChMaterialSurfaceNSC>(),                                                       // no need for contact material
+    //    0.005);                                                            // mesh sweep sphere radius
+    //slope->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/spheretexture.png")));
+    //my_system.AddBody(slope);
+    //slope->SetBodyFixed(true);
+    //slope->SetPos(ChVector<>(-10, 1, 0));
 
     //
     //---create flipper arm-------
@@ -1122,12 +1276,14 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     //
     //application.SetTimestep(1);
-    application.SetTimestep(0.003);
+    application.SetTimestep(0.01);
     application.SetTryRealtime(true);
 
     while (application.GetDevice()->run()) {
+        double t = my_system.GetChTime();
         // Irrlicht must prepare frame to draw
         application.BeginScene(true, true, SColor(255, 140, 161, 192));
+        application.GetActiveCamera()->setTarget(core::vector3dfCH(mytank->truss->GetPos()));
 
         // .. draw solid 3D items (boxes, cylinders, shapes) belonging to Irrlicht scene, if any
         application.DrawAll();
@@ -1141,11 +1297,36 @@ int main(int argc, char* argv[]) {
         //msineangle->Set_yconst(angle);
         motor_fun->SetSetpoint(angle, 0.5);
 
+        bufferAcc = acc->GetMostRecentBuffer<UserAccelBufferPtr>();
+        bufferGyro = gyro->GetMostRecentBuffer<UserGyroBufferPtr>();
+        if (bufferAcc->Buffer && bufferGyro->Buffer) {
+            // Save the imu data to file
+            AccelData acc_data = bufferAcc->Buffer[0];
+            GyroData gyro_data = bufferGyro->Buffer[0];
+
+            //imu_csv << std::fixed << std::setprecision(6);
+            imu_csv << t;
+            imu_csv << acc_data.X;
+            imu_csv << acc_data.Y;
+            imu_csv << acc_data.Z;
+            imu_csv << gyro_data.Roll;
+            imu_csv << gyro_data.Pitch;
+            imu_csv << gyro_data.Yaw;
+            //imu_csv << mag_data.X;
+            //imu_csv << mag_data.Y;
+            //imu_csv << mag_data.Z;
+            imu_csv << std::endl;
+            imu_last_launch = bufferGyro->LaunchedCount;
+            printf("%0.4f %0.4f %0.4f \n", acc_data.X, acc_data.Y, acc_data.Z);
+        }
+        manager->Update();
+
         // HERE CHRONO INTEGRATION IS PERFORMED:
         application.DoStep();
 
         application.EndScene();
     }
+    imu_csv.write_to_file(imu_file);
 
     if (mytank)
         delete mytank;

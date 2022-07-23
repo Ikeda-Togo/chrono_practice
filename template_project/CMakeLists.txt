@@ -24,8 +24,11 @@ SET(DEMOS
     simple_motor_test
     simple_sensor_test
     flipper_test
-    flipper_test2
+    demo_simple_flipper
     stl_load_test
+    crow_DeformableSoil
+    slope_crow_DeformableSoil
+    randomStepField
 )
 
 #--------------------------------------------------------------
@@ -76,7 +79,7 @@ LIST(APPEND CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX}/../Chrono/lib")
 
 
 find_package(Chrono
-             COMPONENTS Irrlicht sensor
+             COMPONENTS Irrlicht sensor vehicle
              OPTIONAL_COMPONENTS PardisoMKL
              CONFIG)
 
@@ -145,7 +148,7 @@ endif()
 
 FOREACH(PROGRAM ${DEMOS})
 
-    ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
+    ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp" random_step.h)
 
 
 #--------------------------------------------------------------

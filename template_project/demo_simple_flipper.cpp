@@ -832,7 +832,7 @@ int main(int argc, char* argv[]) {
             bufferMag->LaunchedCount > imu_last_launch) {
             AccelData acc_data = bufferAcc->Buffer[0];
             GyroData gyro_data = bufferGyro->Buffer[0];
-            //printf("%0.4f %0.4f %0.4f \n", acc_data.X,acc_data.Y,acc_data.Z);
+            printf("%0.4f %0.4f %0.4f \n", acc_data.X,acc_data.Y,acc_data.Z);
             //std::cout << acc_data.X << " : " << acc_data.Y << " : " << acc_data.Z << " : " << std::endl;
             //std::cout << gyro_data.Roll << " : " << gyro_data.Pitch << " : " << gyro_data.Yaw << " : " << std::endl;
             imu_last_launch = bufferMag->LaunchedCount;

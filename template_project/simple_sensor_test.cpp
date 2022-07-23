@@ -271,7 +271,7 @@ int main(int argc, char* argv[]) {
 
     // Create a CSV writer to record the IMU data
     imu_file += "pendulum_leg_1.csv";
-    utils::CSV_writer imu_csv(" ");
+    utils::CSV_writer imu_csv(",");
 
     // Create a CSV writer to record the GPS data
     gps_file += "pendulum_leg_2.csv";
@@ -297,6 +297,7 @@ int main(int argc, char* argv[]) {
 
     while (ch_time < end_time) {
         plate->SetRot(Q_from_AngZ(rot_rate * ch_time));
+        double t = mphysicalSystem.GetChTime();
         // Get the most recent imu data
         bufferAcc = acc->GetMostRecentBuffer<UserAccelBufferPtr>();
         bufferGyro = gyro->GetMostRecentBuffer<UserGyroBufferPtr>();
@@ -310,16 +311,17 @@ int main(int argc, char* argv[]) {
 
             plate->GetRot().Q_to_AngAxis(ang, axis);
 
-            imu_csv << std::fixed << std::setprecision(6);
+            //imu_csv << std::fixed << std::setprecision(6);
+            imu_csv << t;
             imu_csv << acc_data.X;
             imu_csv << acc_data.Y;
             imu_csv << acc_data.Z;
             imu_csv << gyro_data.Roll;
             imu_csv << gyro_data.Pitch;
             imu_csv << gyro_data.Yaw;
-            imu_csv << mag_data.X;
-            imu_csv << mag_data.Y;
-            imu_csv << mag_data.Z;
+            //imu_csv << mag_data.X;
+            //imu_csv << mag_data.Y;
+            //imu_csv << mag_data.Z;
             imu_csv << std::endl;
             imu_last_launch = bufferMag->LaunchedCount;
         }
