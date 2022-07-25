@@ -957,7 +957,7 @@ public:
         scrollbar_throttleR->setPos(50);
         text_throttleR =
             application->GetIGUIEnvironment()->addStaticText(L"handle", rect<s32>(650, 45, 750, 60), false);
-
+        
         // ..add a GUI slider to control throttle left via mouse
         scrollbar_flipperL =
             application->GetIGUIEnvironment()->addScrollBar(true, rect<s32>(510, 70, 650, 85), 0, 103);
@@ -979,7 +979,7 @@ public:
         // check if user moved the sliders with mouse..
         if (event.EventType == EET_GUI_EVENT) {
             s32 id = event.GUIEvent.Caller->getID();
-
+            
 
             switch (event.GUIEvent.EventType) {
             case EGET_SCROLL_BAR_CHANGED:
@@ -987,7 +987,7 @@ public:
                     pos_speed = ((IGUIScrollBar*)event.GUIEvent.Caller)->getPos();
                     double newthrottleL = ((double)(pos_speed)-50) / 50.0;
                     double newthrottleR = newthrottleL;
-                    newthrottleL = newthrottleL - (((double)(pos_handle)-50) / 50.0);
+                    newthrottleL = newthrottleL- (((double)(pos_handle)-50) / 50.0);
                     newthrottleR = newthrottleR + (((double)(pos_handle)-50) / 50.0);
 
                     this->mtank->throttleL = newthrottleL;
@@ -1034,7 +1034,7 @@ public:
                 }
                 if (id == 103) {  // id of 'throttleL' slider..
                     s32 pos = ((IGUIScrollBar*)event.GUIEvent.Caller)->getPos();
-                    *mangleL = CH_C_PI * (pos - 50) / 100;
+                    *mangleL = CH_C_PI * (pos-50) / 100;
 
                     return true;
                 }
@@ -1070,7 +1070,6 @@ private:
     IGUIScrollBar* scrollbar_flipperR;
 };
 
-
 //
 // This is the program which is executed
 //
@@ -1090,7 +1089,7 @@ int main(int argc, char* argv[]) {
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
-    application.AddTypicalCamera(core::vector3df(-3, 5, -3), core::vector3df(0, 0, 0));
+    application.AddTypicalCamera(core::vector3df(-2, 1, -6), core::vector3df(-2, 0, 0));
 
     // 2- Create the rigid bodies of the simpified tank suspension mechanical system
     //   maybe setting position/mass/inertias of
@@ -1108,18 +1107,6 @@ int main(int argc, char* argv[]) {
 
     my_system.Set_G_acc({ 0, -9.81, 0 });
 
-    //// ..some obstacles on the ground:
-    //auto obst_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
-
-    //for (int i = 0; i < 30; i++) {
-    //    auto my_obstacle = chrono_types::make_shared<ChBodyEasyBox>(
-    //        0.6 * (1 - 0.4 * ChRandom()), 0.08, 0.3 * (1 - 0.4 * ChRandom()), 1000, true, true, obst_mat);
-    //    my_obstacle->SetMass(1);
-    //    //my_obstacle->SetPos(ChVector<>(-6 + 6 * ChRandom(), 2 + 1 * ChRandom(), 6 * ChRandom()));
-    //    my_obstacle->SetPos(ChVector<>(-6 + 6 * ChRandom(), 2, 6 * ChRandom()));
-    //    my_obstacle->SetRot(Q_from_AngAxis(ChRandom() * CH_C_PI, VECT_Y));
-    //    my_system.AddBody(my_obstacle);
-    //}
 
     //------------------------------------------
     // create robot model
@@ -1127,7 +1114,7 @@ int main(int argc, char* argv[]) {
     //
     // ..the tank (this class - see above - is a 'set' of bodies and links, automatically added at creation)
 
-    double model_height = 3;
+    double model_height = 1;
     MySimpleTank* mytank = new MySimpleTank(my_system, application.GetSceneManager(), application.GetVideoDriver(), 0, model_height);
     ChVector<> center_pos = mytank->wheelLB->GetPos() - mytank->wheelLF->GetPos();
     MySimpleFlipper* myflipper = new MySimpleFlipper(
@@ -1166,6 +1153,7 @@ int main(int argc, char* argv[]) {
     auto motor_funR = chrono_types::make_shared<ChFunction_Setpoint>();
     rotmotor2->SetAngleFunction(motor_funR);
 
+
     auto tailmesh = chrono_types::make_shared<ChBodyEasyMesh>(               //
         "C:/Users/syuug/Documents/GitHub/chrono_practice/obj/tail.obj",  // data file
         10000,                                                          // density
@@ -1178,7 +1166,6 @@ int main(int argc, char* argv[]) {
     my_system.Add(tailmesh);
     tailmesh->SetRot(Q_from_AngAxis(0, VECT_X));
     tailmesh->SetPos(mytank->truss->GetPos() + ChVector<>(1.05, 0.433, 0));
-    tailmesh->SetMass(100);
 
     auto color_tail = chrono_types::make_shared<ChColorAsset>();
     color_tail->SetColor(ChColor(0.2f, 0.2f, 0.2f));
@@ -1189,11 +1176,6 @@ int main(int argc, char* argv[]) {
         ChCoordsys<>(tailmesh->GetPos(), QUNIT));
     link_tail->Lock(true);
     my_system.AddLink(link_tail);
-
-    //auto pole = chrono_types::make_shared<ChBodyEasyBox>(0.1,0.1,3, 30000, true, false, nullptr);
-    //pole->SetPos(ChVector<>(0,5,0));
-    //pole->SetBodyFixed(true);
-    //my_system.Add(pole);
 
 
 
@@ -1238,27 +1220,6 @@ int main(int argc, char* argv[]) {
     UserAccelBufferPtr bufferAcc;
     UserGyroBufferPtr bufferGyro;
 
-    double acc_data[3];
-    acc_data[0] = 0;
-    acc_data[1] = 1;
-    acc_data[2] = 2;
-
-    std::wstringstream ss[3];
-    IGUIStaticText* acc_data_text[3];
-
-    ss[0] << L"x acc :";
-    ss[1] << L"y acc :";
-    ss[2] << L"z acc :";
-    
-    for (int i = 0; i < 3; i++) {
-        ss[i] << acc_data[i];
-
-        acc_data_text[i] =
-            application.GetIGUIEnvironment()->addStaticText(ss[i].str().c_str(), rect<s32>(300, 20 + (i * 25), 750, 35 + i * 25), false);
-  
-    }
-
-
     int imu_last_launch = 0;
 
     // -----------------
@@ -1287,16 +1248,16 @@ int main(int argc, char* argv[]) {
     // cleate field ofject
     //--------------------
 
-    StepType step_type = RANDOM ;
-    RandomStep* myrandomstep = new RandomStep(my_system, step_type);
+    //StepType step_type =FLAT ;
+    //RandomStep* myrandomstep = new RandomStep(my_system, step_type);
 
-    //auto obj_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
-    //obj_mat->SetFriction(1.0);
-    //auto box = chrono_types::make_shared<ChBodyEasyBox>(0.1, 3, 0.1, 30000, true, true, obj_mat);
-    //box->SetPos(mytank->truss->GetPos());
-    //box->SetCollide(false);
-    //box->SetBodyFixed(true);
-    //my_system.Add(box);
+    auto obj_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    obj_mat->SetFriction(1.0);
+    auto box = chrono_types::make_shared<ChBodyEasyBox>(1, 0.5, 4, 30000, true, true, obj_mat);
+    box->SetPos(ChVector<>(-4,0.25,0));
+    box->SetCollide(true);
+    box->SetBodyFixed(true);
+    my_system.Add(box);
 
 
     //auto slope = chrono_types::make_shared<ChBodyEasyMesh>(               //
@@ -1307,14 +1268,13 @@ int main(int argc, char* argv[]) {
     //    true,                                                         // collision?
     //    chrono_types::make_shared<ChMaterialSurfaceNSC>(),                                                       // no need for contact material
     //    0.005);                                                            // mesh sweep sphere radius
-    //slope->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/spheretexture.png")));
+    ////slope->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/cubetexture_borders.png")));
     //my_system.AddBody(slope);
     //slope->SetBodyFixed(true);
     //slope->SetPos(ChVector<>(-10, 1, 0));
 
-    //
-    //---create flipper arm-------
-    //
+
+
     auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     double angleL = 0;
     double angleR = 0;
@@ -1338,7 +1298,7 @@ int main(int argc, char* argv[]) {
 
     // Create some graphical-user-interface (GUI) items to show on the screen.
     // This requires an event receiver object.
-    MyEventReceiver receiver(&application, mytank, myflipper, &angleL, &angleR);
+    MyEventReceiver receiver(&application, mytank, myflipper, &angleL,&angleR);
     // note how to add the custom event receiver to the default interface:
     application.SetUserEventReceiver(&receiver);
 
@@ -1353,16 +1313,12 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     //
     //application.SetTimestep(1);
-    application.SetTimestep(0.01);
+    application.SetTimestep(0.03);
     application.SetTryRealtime(true);
     
     ChVector<> now_pos(mytank->truss->GetPos());
-
     auto color_nowpos = chrono_types::make_shared<ChColorAsset>();
     color_nowpos->SetColor(ChColor(0.2f, 1.0f, 0.2f));
-
-    auto color_red = chrono_types::make_shared<ChColorAsset>();
-    color_red->SetColor(ChColor(1.0f, 0.2f, 0.2f));
     bool asset_change[30][30] = { false };
 
     while (application.GetDevice()->run()) {
@@ -1383,33 +1339,20 @@ int main(int argc, char* argv[]) {
         //std::cout << angle << std::endl;
         //msineangle->Set_yconst(angle);
         motor_funL->SetSetpoint(angleL, 0.5);
-        motor_funR->SetSetpoint(angleR, 0.5);
+        motor_funR->SetSetpoint(angleL, 0.5);
 
         bufferAcc = acc->GetMostRecentBuffer<UserAccelBufferPtr>();
         bufferGyro = gyro->GetMostRecentBuffer<UserGyroBufferPtr>();
         if (bufferAcc->Buffer && bufferGyro->Buffer) {
             // Save the imu data to file
-            acc_data[0] = bufferAcc->Buffer[0].X;
-            acc_data[1] = bufferAcc->Buffer[0].Y;
-            acc_data[2] = bufferAcc->Buffer[0].Z;
+            AccelData acc_data = bufferAcc->Buffer[0];
             GyroData gyro_data = bufferGyro->Buffer[0];
-
-            for (int i = 0; i < 3; i++) {
-                ss[i].str(L"");
-                if (i == 0) ss[i] << L"X acc:";
-                else if(i==1)ss[i] << L"Y acc:";
-                else ss[i] << L"Z acc:";
-
-                ss[i] << acc_data[i];
-                acc_data_text[i]->setText(ss[i].str().c_str());
-
-            }
 
             //imu_csv << std::fixed << std::setprecision(6);
             imu_csv << t;
-            imu_csv << acc_data[0];
-            imu_csv << acc_data[1];
-            imu_csv << acc_data[2];
+            imu_csv << acc_data.X;
+            imu_csv << acc_data.Y;
+            imu_csv << acc_data.Z;
             imu_csv << gyro_data.Roll;
             imu_csv << gyro_data.Pitch;
             imu_csv << gyro_data.Yaw;
@@ -1421,25 +1364,6 @@ int main(int argc, char* argv[]) {
             //printf("%0.4f %0.4f %0.4f \n", acc_data.X, acc_data.Y, acc_data.Z);
         }
         manager->Update();
-
-        //ロボット上のオブジェを緑にする
-        now_pos =mytank->truss->GetPos();
-
-        //if (acc_data.Y > 50) {
-        //    myrandomstep->random_block[int(floor(now_pos.x())) + 10][int(floor(now_pos.z())) + 10]->AddAsset(color_red);
-        //    application.AssetBindAll();
-        //    application.AssetUpdateAll();
-        //    asset_change[int(floor(now_pos.x())) + 10][int(floor(now_pos.z())) + 10] = true;
-        //}
-        //
-        //if (!asset_change[int(floor(now_pos.x())) + 10][int(floor(now_pos.z())) + 10]) {
-        //    myrandomstep->random_block[int(floor(now_pos.x())) + 10][int(floor(now_pos.z())) + 10]->AddAsset(color_nowpos);
-        //    application.AssetBindAll();
-        //    application.AssetUpdateAll();
-        //    asset_change[int(floor(now_pos.x())) + 10][int(floor(now_pos.z())) + 10] = true;
-        //    //GetLog() << myrandomstep->random_block[int(now_pos.x()) + 10][int(now_pos.z()) + 9]->GetAssets() << "\n";
-        //    //std::cout << "x is:" << int(now_pos.x()) + 10 << "z is:" << int(now_pos.z()) + 9 << std::endl;
-        //}
 
         // HERE CHRONO INTEGRATION IS PERFORMED:
         application.DoStep();

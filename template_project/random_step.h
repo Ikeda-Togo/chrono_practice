@@ -36,15 +36,16 @@ class RandomStep
 private:
     double block_vol = 20;
 public:
-    double size = 20;
+    double size = 5;
     double height = 1;
     double thickness = 0.2;
 
-    double block_size = 1;
+    double block_size = 0.5;
     std::shared_ptr<ChBody> random_block[30][30];
 
 
     enum StepType {
+        FLAT,
         RANDOM,
         SIN,
         STEP
@@ -90,6 +91,22 @@ public:
         ground_mat->SetFriction(1.0);
         
         switch (step_type) {
+        case FLAT:
+            for (int i = 0; i < size / block_size; i++) {
+                for (int j = 0; j < size / block_size; j++) {
+                    double random_height = 1;
+                    random_block[i][j] = chrono_types::make_shared<ChBodyEasyBox>(block_size, random_height, block_size, 30000, true, true, ground_mat);
+                    random_block[i][j]->SetPos(ChVector<>(-size / 2 + i * block_size + block_size / 2, random_height / 2, -size / 2 + j * block_size + block_size / 2));
+                    random_block[i][j]->SetBodyFixed(true);
+                    //random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/cubetexture_borders.png")));
+                    auto color_truss = chrono_types::make_shared<ChColorAsset>();
+                    color_truss->SetColor(ChColor(0.2f, 0.2f, 0.2f));
+                    random_block[i][j]->AddAsset(color_truss);
+                    my_system.Add(random_block[i][j]);
+                }
+            }
+            break;
+
         case RANDOM:
             for (int i = 0; i < size / block_size; i++) {
                 for (int j = 0; j < size / block_size; j++) {
@@ -97,7 +114,11 @@ public:
                     random_block[i][j] = chrono_types::make_shared<ChBodyEasyBox>(block_size, random_height, block_size, 30000, true, true, ground_mat);
                     random_block[i][j]->SetPos(ChVector<>(-size / 2 + i * block_size + block_size / 2, random_height / 2, -size / 2 + j * block_size + block_size / 2));
                     random_block[i][j]->SetBodyFixed(true);
-                    random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/spheretexture.png")));
+                    random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/cubetexture_borders.png")));
+                    //random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/spheretexture.png")));
+                    auto color_truss = chrono_types::make_shared<ChColorAsset>();
+                    color_truss->SetColor(ChColor(0.2f, 0.2f, 0.2f));
+                    random_block[i][j]->AddAsset(color_truss);
                     my_system.Add(random_block[i][j]);
                 }
             }
@@ -109,7 +130,8 @@ public:
                     random_block[i][j] = chrono_types::make_shared<ChBodyEasyBox>(block_size, height, block_size, 30000, true, true, ground_mat);
                     random_block[i][j]->SetPos(ChVector<>(-size / 2 + i * block_size + block_size/2, height / 2, -size / 2 + j * block_size + block_size / 2));
                     random_block[i][j]->SetBodyFixed(true);
-                    random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/spheretexture.png")));
+                    random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/cubetexture_borders.png")));
+                    //random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/spheretexture.png")));
                     my_system.Add(random_block[i][j]);
                 }
             }
@@ -137,6 +159,7 @@ public:
                     auto color_truss = chrono_types::make_shared<ChColorAsset>();
                     color_truss->SetColor(ChColor(0.2f, 0.2f, 0.2f));
                     random_block[i][j]->AddAsset(color_truss);
+                    random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/cubetexture_borders.png")));
                     //random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/spheretexture.png")));
                     my_system.Add(random_block[i][j]);
                 }

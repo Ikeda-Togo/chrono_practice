@@ -24,6 +24,7 @@ SET(DEMOS
     simple_motor_test
     simple_sensor_test
     flipper_test
+    parallel_flipper_test
     demo_simple_flipper
     stl_load_test
     crow_DeformableSoil
@@ -167,15 +168,6 @@ FOREACH(PROGRAM ${DEMOS})
 	    COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
 	    LINK_FLAGS "${CHRONO_LINKER_FLAGS}")
 
-#set_target_properties(track_exe PROPERTIES 
-#	    COMPILE_FLAGS "${CHRONO_CXX_FLAGS} ${EXTRA_COMPILE_FLAGS}"
-#	    COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
-#	    LINK_FLAGS "${CHRONO_LINKER_FLAGS}")
-
-#set_target_properties(motor_exe PROPERTIES 
-#	    COMPILE_FLAGS "${CHRONO_CXX_FLAGS} ${EXTRA_COMPILE_FLAGS}"
-#	    COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
-#	    LINK_FLAGS "${CHRONO_LINKER_FLAGS}")
 
 #--------------------------------------------------------------
 # Link to Chrono libraries and dependency libraries

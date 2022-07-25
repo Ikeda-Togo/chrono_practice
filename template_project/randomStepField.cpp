@@ -89,7 +89,7 @@ private:
     double block_vol = 20;
 public:
     double size = 10;
-    double height = 1;
+    double height = 2;
     double thickness = 0.2;
     
     double block_size = 0.5;
@@ -140,11 +140,14 @@ public:
         case RANDOM:
             for (int i = 0; i < size * 2; i++) {
                 for (int j = 0; j < size * 2; j++) {
-                    double random_height = ChRandom() * 0.5;
+                    double random_height = ChRandom() ;
                     random_block[i][j] = chrono_types::make_shared<ChBodyEasyBox>(block_size, random_height, block_size, 30000, true, true, ground_mat);
                     random_block[i][j]->SetPos(ChVector<>(-size / 2 + i * block_size + 0.25, random_height / 2, -size / 2 + j * block_size + 0.25));
                     random_block[i][j]->SetBodyFixed(true);
-                    random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/spheretexture.png")));
+                    random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/cubetexture_borders.png")));
+                    auto color_truss = chrono_types::make_shared<ChColorAsset>();
+                    color_truss->SetColor(ChColor(0.2f, 0.2f, 0.2f));
+                    random_block[i][j]->AddAsset(color_truss);
                     my_system.Add(random_block[i][j]);
                 }
             }
@@ -156,7 +159,10 @@ public:
                     random_block[i][j] = chrono_types::make_shared<ChBodyEasyBox>(block_size, height, block_size, 30000, true, true, ground_mat);
                     random_block[i][j]->SetPos(ChVector<>(-size / 2 + i * block_size + 0.25, height / 2, -size / 2 + j * block_size + 0.25));
                     random_block[i][j]->SetBodyFixed(true);
-                    random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/spheretexture.png")));
+                    random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/cubetexture_borders.png")));
+                    auto color_truss = chrono_types::make_shared<ChColorAsset>();
+                    color_truss->SetColor(ChColor(0.2f, 0.2f, 0.2f));
+                    random_block[i][j]->AddAsset(color_truss);
                     my_system.Add(random_block[i][j]);
                 }
             }
@@ -181,6 +187,7 @@ public:
                     random_block[i][j] = chrono_types::make_shared<ChBodyEasyBox>(block_size, height, block_size, 30000, true, true, ground_mat);
                     random_block[i][j]->SetPos(ChVector<>(-size / 2 + i * block_size + 0.25, height / 2, -size / 2 + j * block_size + 0.25));
                     random_block[i][j]->SetBodyFixed(true);
+                    random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/cubetexture_borders.png")));
                     auto color_truss = chrono_types::make_shared<ChColorAsset>();
                     color_truss->SetColor(ChColor(0.2f, 0.2f, 0.2f));
                     random_block[i][j]->AddAsset(color_truss);
@@ -216,11 +223,11 @@ int main(int argc, char* argv[]) {
     double angle = 0.0;
 
     // Create the Irrlicht visualization (open the Irrlicht device, bind a simple user interface, etc. etc.)
-    ChIrrApp application(&my_system, L"Modeling a simplified   tank", core::dimension2d<u32>(1600, 1200));
-    application.AddTypicalLogo();
+    ChIrrApp application(&my_system, L"Modeling a simplified   tank", core::dimension2d<u32>(1280, 720));
+    //application.AddTypicalLogo();
     application.AddTypicalSky();
-    application.AddTypicalLights(vector3df(0.f, 100.f, 0.f));
-    application.AddTypicalCamera(core::vector3df(-6, 5, -6), core::vector3df(0, 0, 0));
+    application.AddTypicalLights(vector3df(-80.f, 100.f, -80.f));
+    application.AddTypicalCamera(core::vector3df(-6, 6, -6), core::vector3df(0, -3, 0));
 
     // 2- Create the rigid bodies of the simpified tank suspension mechanical system
     //   maybe setting position/mass/inertias of
@@ -249,7 +256,7 @@ int main(int argc, char* argv[]) {
     //    my_system.AddBody(my_obstacle);
     //}
 
-    StepType step_type=STEP;
+    StepType step_type=SIN;
     RandomStep* myrandomstep = new RandomStep(my_system ,step_type);
 
 
