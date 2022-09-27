@@ -36,7 +36,7 @@ class RandomStep
 private:
     double block_vol = 20;
 public:
-    double size = 5;
+    double size = 10;
     double height = 1;
     double thickness = 0.2;
 
@@ -102,6 +102,7 @@ public:
                     auto color_truss = chrono_types::make_shared<ChColorAsset>();
                     color_truss->SetColor(ChColor(0.2f, 0.2f, 0.2f));
                     random_block[i][j]->AddAsset(color_truss);
+                    random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/cubetexture_borders.png")));
                     my_system.Add(random_block[i][j]);
                 }
             }

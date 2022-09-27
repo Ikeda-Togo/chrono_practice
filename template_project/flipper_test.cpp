@@ -41,7 +41,7 @@
 #include "chrono_irrlicht/ChIrrApp.h"
 #include "chrono_irrlicht/ChIrrMeshTools.h"
 
-#include "random_step.h"
+#include "header_random_step.h"
 
 // Use the namespaces of Chrono
 using namespace chrono;
@@ -93,7 +93,7 @@ collision::ChCollisionSystemType collision_type = collision::ChCollisionSystemTy
 // bodies and links which are grouped within this class; so it is
 // easier to manage data structures in this example).
 
-//ƒNƒ[ƒ‰‚Ìƒ‚ƒfƒ‹¶¬
+//ï¿½Nï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½Ìƒï¿½ï¿½fï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 class MySimpleTank {
 public:
@@ -1287,7 +1287,7 @@ int main(int argc, char* argv[]) {
     // cleate field ofject
     //--------------------
 
-    StepType step_type = RANDOM ;
+    StepType step_type = FLAT ;
     RandomStep* myrandomstep = new RandomStep(my_system, step_type);
 
     //auto obj_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
@@ -1422,24 +1422,24 @@ int main(int argc, char* argv[]) {
         }
         manager->Update();
 
-        //ƒƒ{ƒbƒgã‚ÌƒIƒuƒWƒF‚ğ—Î‚É‚·‚é
+        //ï¿½ï¿½ï¿½{ï¿½bï¿½gï¿½ï¿½ÌƒIï¿½uï¿½Wï¿½Fï¿½ï¿½Î‚É‚ï¿½ï¿½ï¿½
         now_pos =mytank->truss->GetPos();
 
-        //if (acc_data.Y > 50) {
+        // if (acc_data.Y > 50) {
         //    myrandomstep->random_block[int(floor(now_pos.x())) + 10][int(floor(now_pos.z())) + 10]->AddAsset(color_red);
         //    application.AssetBindAll();
         //    application.AssetUpdateAll();
         //    asset_change[int(floor(now_pos.x())) + 10][int(floor(now_pos.z())) + 10] = true;
-        //}
-        //
-        //if (!asset_change[int(floor(now_pos.x())) + 10][int(floor(now_pos.z())) + 10]) {
+        // }
+        
+        // if (!asset_change[int(floor(now_pos.x())) + 10][int(floor(now_pos.z())) + 10]) {
         //    myrandomstep->random_block[int(floor(now_pos.x())) + 10][int(floor(now_pos.z())) + 10]->AddAsset(color_nowpos);
         //    application.AssetBindAll();
         //    application.AssetUpdateAll();
         //    asset_change[int(floor(now_pos.x())) + 10][int(floor(now_pos.z())) + 10] = true;
         //    //GetLog() << myrandomstep->random_block[int(now_pos.x()) + 10][int(now_pos.z()) + 9]->GetAssets() << "\n";
         //    //std::cout << "x is:" << int(now_pos.x()) + 10 << "z is:" << int(now_pos.z()) + 9 << std::endl;
-        //}
+        // }
 
         // HERE CHRONO INTEGRATION IS PERFORMED:
         application.DoStep();

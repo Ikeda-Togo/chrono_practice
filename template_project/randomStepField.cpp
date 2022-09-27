@@ -31,7 +31,7 @@
 #include "chrono_irrlicht/ChIrrApp.h"
 #include "chrono_irrlicht/ChIrrMeshTools.h"
 
-//#include "random_step.h"
+//#include "header_random_step.h"
 
 
 // Use the namespaces of Chrono

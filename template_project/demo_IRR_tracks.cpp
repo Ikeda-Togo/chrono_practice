@@ -93,6 +93,7 @@ class MySimpleTank {
         double shoelength = 0.2;
         double shoemass = 2;
         double radiustrack = 0.31;
+        //double radiustrack = 0.41;
         double wheeldiameter = 0.280 * 2;
         int nwrap = 6;
         int ntiles = 7;
