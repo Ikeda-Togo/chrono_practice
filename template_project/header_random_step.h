@@ -37,7 +37,7 @@ private:
     double block_vol = 20;
 public:
     double size = 10;
-    double height = 1;
+    double height = 3;
     double thickness = 0.2;
 
     double block_size = 0.5;

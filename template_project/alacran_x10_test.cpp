@@ -220,6 +220,7 @@ int main(int argc, char* argv[]) {
     // ..the tank (this class - see above - is a 'set' of bodies and links, automatically added at creation)
 
     double model_height = 5;
+    //bool fixflag = true;
     bool fixflag = false;
     MySimpleTank* mytank = new MySimpleTank(my_system, application.GetSceneManager(), application.GetVideoDriver(), 0, model_height,fixflag);
     ChVector<> center_pos = mytank->wheelLB->GetPos() - mytank->wheelLF->GetPos();
