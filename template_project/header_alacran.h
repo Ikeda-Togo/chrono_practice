@@ -760,7 +760,8 @@ public:
         link_motorLB = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
         link_motorLB->SetSpeedFunction(
             chrono_types::make_shared<ChFunction_Const>());  // actually, default function type
-        link_motorLB->Initialize(wheelLB, trussL, ChFrame<>(ChVector<>(mx, my + radiustrack, mz + rlwidth / 2 + clwidth / 2), QUNIT));
+        link_motorLB->Initialize(wheelLB, 
+            trussL, ChFrame<>(ChVector<>(mx, my + radiustrack, mz + rlwidth / 2 + clwidth / 2), QUNIT));
         my_system.AddLink(link_motorLB);
 
         //--- TRACKS ---

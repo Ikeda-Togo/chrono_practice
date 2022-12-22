@@ -49,12 +49,13 @@ enum StepType {
 class MyEventReceiver : public IEventReceiver {
 public:
     s32 pos_speed = 50, pos_handle = 50;
-    MyEventReceiver(ChIrrAppInterface* myapp, MySimpleTank* atank, MySimpleFlipper* aflipper, double* angleL, double* angleR) {
+    MyEventReceiver(ChIrrAppInterface* myapp, MySimpleTank* atank, MySimpleFlipper* aflipper, MySimpleBackunit* abackunit, double* angleL, double* angleR) {
         // store pointer application
         application = myapp;
         // store pointer to other stuff
         mtank = atank;
         mflipper = aflipper;
+        mbackunit = abackunit;
         mangleL = angleL;
         mangleR = angleR;
 
@@ -122,6 +123,11 @@ public:
                     mfun = std::static_pointer_cast<ChFunction_Const>(mflipper->link_motorRB->GetSpeedFunction());
                     mfun->Set_yconst(newthrottleR * 6);
 
+                    //後部ユニットの速度
+                    mfun = std::static_pointer_cast<ChFunction_Const>(mbackunit->link_motorRB->GetSpeedFunction());
+                    mfun->Set_yconst((newthrottleR * 6 + newthrottleL * 6)/2);
+                    mfun = std::static_pointer_cast<ChFunction_Const>(mbackunit->link_motorLB->GetSpeedFunction());
+                    mfun->Set_yconst((newthrottleR * 6 + newthrottleL * 6)/2);
 
                     return true;
                 }
@@ -174,6 +180,7 @@ private:
     ChIrrAppInterface* application;
     MySimpleTank* mtank;
     MySimpleFlipper* mflipper;
+    MySimpleBackunit* mbackunit;
     double* mangleL;
     double* mangleR;
 
@@ -198,7 +205,7 @@ int main(int argc, char* argv[]) {
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
-    application.AddTypicalCamera(core::vector3df(10, 10, 10), core::vector3df(0, 0, 0));
+    application.AddTypicalCamera(core::vector3df(-13, 7, 1.4), core::vector3df(-10, 5, 1.4));
 
     // ..the world
     auto ground_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
@@ -220,9 +227,9 @@ int main(int argc, char* argv[]) {
     // ..the tank (this class - see above - is a 'set' of bodies and links, automatically added at creation)
 
     double model_height = 5;
-    //bool fixflag = true;
-    bool fixflag = false;
-    MySimpleTank* mytank = new MySimpleTank(my_system, application.GetSceneManager(), application.GetVideoDriver(), 0, model_height,fixflag);
+    bool fixflag = true;
+    //bool fixflag = false;
+    MySimpleTank* mytank = new MySimpleTank(my_system, application.GetSceneManager(), application.GetVideoDriver(), -5, model_height,fixflag);
     ChVector<> center_pos = mytank->wheelLB->GetPos() - mytank->wheelLF->GetPos();
 
     printf("tred is %lf\r\n", mytank->wheelLF->GetPos().z() /*- mytank->wheelRF->GetPos().z()*/);
@@ -231,10 +238,12 @@ int main(int argc, char* argv[]) {
         my_system,
         application.GetSceneManager(),
         application.GetVideoDriver(),
-        mytank->truss->GetPos().x()*2,
+        mytank->wheelLF->GetPos().x(),
          model_height, 
         0
     );
+
+    MySimpleBackunit* mybackunit = new MySimpleBackunit(my_system, application.GetSceneManager(), application.GetVideoDriver(), -10, model_height, false);
 
 
     // Create the motor
@@ -263,6 +272,20 @@ int main(int argc, char* argv[]) {
 
     auto motor_funR = chrono_types::make_shared<ChFunction_Setpoint>();
     rotmotor2->SetAngleFunction(motor_funR);
+
+
+    // Create the motor
+    auto rotmotor3 = chrono_types::make_shared<ChLinkMotorRotationAngle>();
+
+    // Connect the rotor and the stator and add the motor to the system:
+    rotmotor3->Initialize(mybackunit->truss,                // body A (slave)
+        mytank->truss,               // body B (master)
+        ChFrame<>(mytank->wheelRB->GetPos())  // motor frame, in abs. coords
+    );
+    my_system.Add(rotmotor3);
+
+    auto motor_funBack = chrono_types::make_shared<ChFunction_Setpoint>();
+    rotmotor3->SetAngleFunction(motor_funBack);
 
 
     //----------------------------
@@ -322,7 +345,7 @@ int main(int argc, char* argv[]) {
     // Use this function for 'converting' assets into Irrlicht meshes
     application.AssetUpdateAll();
 
-    MyEventReceiver receiver(&application, mytank, myflipper, &angleL, &angleR);
+    MyEventReceiver receiver(&application, mytank, myflipper, mybackunit, &angleL, &angleR);
     application.SetUserEventReceiver(&receiver);
 
     //
@@ -343,7 +366,7 @@ int main(int argc, char* argv[]) {
         double t = my_system.GetChTime();
         // Irrlicht must prepare frame to draw
         application.BeginScene(true, true, SColor(255, 140, 161, 192));
-        application.GetActiveCamera()->setTarget(core::vector3dfCH(mytank->truss->GetPos()));
+        //application.GetActiveCamera()->setTarget(core::vector3dfCH(mytank->truss->GetPos()));
 
 
         // .. draw solid 3D items (boxes, cylinders, shapes) belonging to Irrlicht scene, if any
@@ -357,6 +380,7 @@ int main(int argc, char* argv[]) {
         //msineangle->Set_yconst(angle);
         motor_funL->SetSetpoint(angleL, 0.5);
         motor_funR->SetSetpoint(angleR, 0.5);
+        motor_funBack->SetSetpoint(angleR, 0.5);
 
         application.DoStep();
 
