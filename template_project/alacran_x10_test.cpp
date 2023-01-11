@@ -49,7 +49,14 @@ enum StepType {
 class MyEventReceiver : public IEventReceiver {
 public:
     s32 pos_speed = 50, pos_handle = 50;
-    MyEventReceiver(ChIrrAppInterface* myapp, MySimpleTank* atank, MySimpleFlipper* aflipper, MySimpleBackunit* abackunit, double* angleL, double* angleR) {
+    MyEventReceiver(ChIrrAppInterface* myapp, 
+        MySimpleTank* atank, 
+        MySimpleFlipper* aflipper, 
+        MySimpleBackunit* abackunit, 
+        double* angleL, 
+        double* angleR,
+        double* TL_angle1,
+        double* TL_angle2) {
         // store pointer application
         application = myapp;
         // store pointer to other stuff
@@ -58,6 +65,8 @@ public:
         mbackunit = abackunit;
         mangleL = angleL;
         mangleR = angleR;
+        mTL_angle1 = TL_angle1;
+        mTL_angle2 = TL_angle2;
 
 
         // ..add a GUI slider to control throttle left via mouse
@@ -91,6 +100,23 @@ public:
         scrollbar_flipperR->setPos(50);
         text_flipperR =
             application->GetIGUIEnvironment()->addStaticText(L"FlipperR ", rect<s32>(650, 95, 750, 110), false);
+    
+        // ..add a GUI slider to control throttle left via mouse
+        scrollbar_TL1 =
+            application->GetIGUIEnvironment()->addScrollBar(true, rect<s32>(750, 20, 890, 35), 0, 105);
+        scrollbar_TL1->setMax(100);
+        scrollbar_TL1->setPos(50);
+        text_TL1 =
+            application->GetIGUIEnvironment()->addStaticText(L"tail link 1 ", rect<s32>(900, 20, 1000, 35), false);
+
+        // ..add a GUI slider to control throttle left via mouse
+        scrollbar_TL2 =
+            application->GetIGUIEnvironment()->addScrollBar(true, rect<s32>(750, 45, 890, 60), 0, 106);
+        scrollbar_TL2->setMax(100);
+        scrollbar_TL2->setPos(50);
+        text_TL2 =
+            application->GetIGUIEnvironment()->addStaticText(L"tail link 2 ", rect<s32>(900, 45, 1000, 60), false);
+
     }
 
     bool OnEvent(const SEvent& event) {
@@ -167,6 +193,18 @@ public:
 
                     return true;
                 }
+                if (id == 105) {  // id of 'throttleL' slider..
+                    s32 pos = ((IGUIScrollBar*)event.GUIEvent.Caller)->getPos();
+                    *mTL_angle1 = CH_C_PI * (pos - 50) / 100;
+
+                    return true;
+                }
+                if (id == 106) {  // id of 'throttleL' slider..
+                    s32 pos = ((IGUIScrollBar*)event.GUIEvent.Caller)->getPos();
+                    *mTL_angle2 = CH_C_PI * (pos - 50) / 100;
+
+                    return true;
+                }
                 break;
             default:
                 break;
@@ -183,6 +221,8 @@ private:
     MySimpleBackunit* mbackunit;
     double* mangleL;
     double* mangleR;
+    double* mTL_angle1;
+    double* mTL_angle2;
 
     IGUIStaticText* text_throttleL;
     IGUIScrollBar* scrollbar_throttleL;
@@ -192,6 +232,10 @@ private:
     IGUIScrollBar* scrollbar_flipperL;
     IGUIStaticText* text_flipperR;
     IGUIScrollBar* scrollbar_flipperR;
+    IGUIStaticText* text_TL1;
+    IGUIScrollBar* scrollbar_TL1;
+    IGUIStaticText* text_TL2;
+    IGUIScrollBar* scrollbar_TL2;
 };
 
 
@@ -205,7 +249,7 @@ int main(int argc, char* argv[]) {
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
-    application.AddTypicalCamera(core::vector3df(-13, 7, 1.4), core::vector3df(-10, 5, 1.4));
+    application.AddTypicalCamera(core::vector3df(-10, 10, 1.4), core::vector3df(-5, 5, 1.4));
 
     // ..the world
     auto ground_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
@@ -227,8 +271,8 @@ int main(int argc, char* argv[]) {
     // ..the tank (this class - see above - is a 'set' of bodies and links, automatically added at creation)
 
     double model_height = 5;
-    bool fixflag = true;
-    //bool fixflag = false;
+    //bool fixflag = true;
+    bool fixflag = false;
     MySimpleTank* mytank = new MySimpleTank(my_system, application.GetSceneManager(), application.GetVideoDriver(), -5, model_height,fixflag);
     ChVector<> center_pos = mytank->wheelLB->GetPos() - mytank->wheelLF->GetPos();
 
@@ -243,7 +287,7 @@ int main(int argc, char* argv[]) {
         0
     );
 
-    MySimpleBackunit* mybackunit = new MySimpleBackunit(my_system, application.GetSceneManager(), application.GetVideoDriver(), -10, model_height, false);
+    MySimpleBackunit* mybackunit = new MySimpleBackunit(my_system, application.GetSceneManager(), application.GetVideoDriver(), -5-1.47-1-1.73, model_height, false);
 
 
     // Create the motor
@@ -274,55 +318,75 @@ int main(int argc, char* argv[]) {
     rotmotor2->SetAngleFunction(motor_funR);
 
 
-    // Create the motor
-    auto rotmotor3 = chrono_types::make_shared<ChLinkMotorRotationAngle>();
-
-    // Connect the rotor and the stator and add the motor to the system:
-    rotmotor3->Initialize(mybackunit->truss,                // body A (slave)
-        mytank->truss,               // body B (master)
-        ChFrame<>(mytank->wheelRB->GetPos())  // motor frame, in abs. coords
-    );
-    my_system.Add(rotmotor3);
-
-    auto motor_funBack = chrono_types::make_shared<ChFunction_Setpoint>();
-    rotmotor3->SetAngleFunction(motor_funBack);
-
 
     //----------------------------
     //cleate tail mesh
     //---------------------------
 
-    //auto tailmesh = chrono_types::make_shared<ChBodyEasyMesh>(               //
-    //    "C:/Users/syuug/Documents/GitHub/chrono_practice/obj/tail.obj",  // data file
-    //    10000,                                                          // density
-    //    false,                                                         // do not compute mass and inertia
-    //    true,                                                          // visualization?
-    //    false,                                                         // collision?
-    //    nullptr,               // no need for contact material
-    //    0);                                                            // mesh sweep sphere radius
-    ////tailmesh->SetBodyFixed(true);
-    //my_system.Add(tailmesh);
-    //tailmesh->SetRot(Q_from_AngAxis(0, VECT_X));
-    //tailmesh->SetPos(mytank->truss->GetPos() + ChVector<>(1.05, 0.433, 0));
-    //tailmesh->SetMass(100);
+    auto tailmesh = chrono_types::make_shared<ChBodyEasyMesh>(               //
+        GetChronoDataFile("models/alacran_x10/back_unit_link.obj").c_str(),  // data file
+        10000,                                                          // density
+        false,                                                         // do not compute mass and inertia
+        true,                                                          // visualization?
+        false,                                                         // collision?
+        nullptr,               // no need for contact material
+        0);                                                            // mesh sweep sphere radius
+    //tailmesh->SetBodyFixed(true);
+    my_system.Add(tailmesh);
+    tailmesh->SetRot(Q_from_AngAxis(0, VECT_X));
+    tailmesh->SetPos(mytank->truss->GetPos() + ChVector<>(-1.47-0.865, 0, 0));
+    //tailmesh->SetPos(mytank->wheelLB->GetPos());
+    tailmesh->SetMass(10);
 
-    //auto color_tail = chrono_types::make_shared<ChColorAsset>();
-    //color_tail->SetColor(ChColor(0.2f, 0.2f, 0.2f));
-    //tailmesh->AddAsset(color_tail);
+    auto color_tail = chrono_types::make_shared<ChColorAsset>();
+    color_tail->SetColor(ChColor(0.8f, 0.8f, 0.8f));
+    tailmesh->AddAsset(color_tail);
 
-    //auto link_tail = chrono_types::make_shared<ChLinkLockRevolute>();  // left, front, upper, 1
-    //link_tail->Initialize(tailmesh, mytank->truss,
+    std::cout << mytank->truss->GetPos() << std::endl;
+    
+    // Create the motor
+    auto tail_link1 = chrono_types::make_shared<ChLinkMotorRotationAngle>();
+
+    // Connect the rotor and the stator and add the motor to the system:
+    tail_link1->Initialize(tailmesh,                // body A (slave)
+        mytank->truss,               // body B (master)
+        //ChFrame<>(mytank->wheelLB->GetPos())  // motor frame, in abs. coords
+        ChFrame<>(mytank->truss->GetPos() + ChVector<>(-1.47, 0, 0))
+    );
+    
+    my_system.Add(tail_link1);
+
+    auto motor_funBack1 = chrono_types::make_shared<ChFunction_Setpoint>();
+    tail_link1->SetAngleFunction(motor_funBack1);
+
+
+    
+    auto tail_link2 = chrono_types::make_shared<ChLinkMotorRotationAngle>();  // left, front, upper, 1
+    
+    tail_link2->Initialize(mybackunit->truss, 
+        tailmesh,
+        ChFrame<>(mytank->truss->GetPos() + ChVector<>(-1.47-1.73, 0, 0))
+    );
+    
+    my_system.AddLink(tail_link2);
+
+    auto motor_funBack2 = chrono_types::make_shared<ChFunction_Setpoint>();
+    tail_link2->SetAngleFunction(motor_funBack2);
+
+
+    //auto tail_link2 = chrono_types::make_shared<ChLinkLockRevolute>();  // left, front, upper, 1
+
+    //tail_link2->Initialize(tailmesh, mybackunit->truss,
     //    ChCoordsys<>(tailmesh->GetPos(), QUNIT));
-    //link_tail->Lock(true);
-    //my_system.AddLink(link_tail);
+    //my_system.AddLink(tail_link2);
 
 
     //---------------------
     // cleate field ofject
     //--------------------
 
-    StepType step_type = FLAT ;
-    RandomStep* myrandomstep = new RandomStep(my_system, step_type);
+    //StepType step_type = FLAT ;
+    //RandomStep* myrandomstep = new RandomStep(my_system, step_type);
 
 
     //
@@ -331,6 +395,8 @@ int main(int argc, char* argv[]) {
     auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     double angleL = 0;
     double angleR = 0;
+    double TL_angle1 = 0;
+    double TL_angle2 = 0;
 
     // Create a ChFunction to be used for the ChLinkMotorRotationAngle
     auto msineangle = chrono_types::make_shared<ChFunction_Const>(0);       // phase [rad]
@@ -345,7 +411,7 @@ int main(int argc, char* argv[]) {
     // Use this function for 'converting' assets into Irrlicht meshes
     application.AssetUpdateAll();
 
-    MyEventReceiver receiver(&application, mytank, myflipper, mybackunit, &angleL, &angleR);
+    MyEventReceiver receiver(&application, mytank, myflipper, mybackunit, &angleL, &angleR, &TL_angle1, &TL_angle2);
     application.SetUserEventReceiver(&receiver);
 
     //
@@ -380,7 +446,8 @@ int main(int argc, char* argv[]) {
         //msineangle->Set_yconst(angle);
         motor_funL->SetSetpoint(angleL, 0.5);
         motor_funR->SetSetpoint(angleR, 0.5);
-        motor_funBack->SetSetpoint(angleR, 0.5);
+        motor_funBack1->SetSetpoint(TL_angle1, 0.5);
+        motor_funBack2->SetSetpoint(TL_angle2, 0.5);
 
         application.DoStep();
 

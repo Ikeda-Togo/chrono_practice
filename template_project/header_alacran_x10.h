@@ -89,7 +89,7 @@ public:
         //my_system.AddBody(Lflipper);
         load_truss->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, rlwidth / 2));
         load_truss->SetBodyFixed(fixflag);
-        load_truss->SetMass(350);
+        load_truss->SetMass(1000);
 
 
         truss = load_truss;
@@ -1120,7 +1120,7 @@ public:
         truss_mat->SetFriction(0.0);//–€CŒW”
 
         auto load_truss = chrono_types::make_shared<ChBodyEasyMesh>(               //
-            GetChronoDataFile("models/alacran_x10/back_unit_truss_blender.obj").c_str(),   // data file
+            GetChronoDataFile("models/alacran_x10/back_unit_truss.obj").c_str(),   // data file
             1000,                                                          // density
             true,                                                         // do not compute mass and inertia
             true,                                                          // visualization?
@@ -1130,7 +1130,7 @@ public:
         //my_system.AddBody(Lflipper);
         load_truss->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, rlwidth / 2));
         load_truss->SetBodyFixed(fixflag);
-        load_truss->SetMass(150);
+        load_truss->SetMass(10);
 
 
         truss = load_truss;
