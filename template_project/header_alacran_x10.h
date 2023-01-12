@@ -77,19 +77,22 @@ public:
         //double cyl_hthickness = 0.02;
 
         // --- The tank body ---
+        auto truss_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+        truss_mat->SetFriction(0.0);//ñÄéCåWêî
 
         auto load_truss = chrono_types::make_shared<ChBodyEasyMesh>(               //
             GetChronoDataFile("models/alacran_x10/truss.obj").c_str(),   // data file
             1000,                                                          // density
             true,                                                         // do not compute mass and inertia
             true,                                                          // visualization?
-            true,                                                         // collision?
-            chrono_types::make_shared<ChMaterialSurfaceNSC>(),                                                       // no need for contact material
+            false,                                                         // collision?
+            truss_mat,                                                       // no need for contact material
             0.0);                                                            // mesh sweep sphere radius
         //my_system.AddBody(Lflipper);
         load_truss->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, rlwidth / 2));
         load_truss->SetBodyFixed(fixflag);
-        load_truss->SetMass(1000);
+        load_truss->SetMass(350);
+        load_truss->SetInertiaXX(ChVector<>(13.8, 13.5, 10));
 
 
         truss = load_truss;
@@ -597,7 +600,7 @@ public:
             );
 
         trussR->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, mz + (rlwidth / 2) - (clwidth / 2) + (shoethickness)));
-        trussR->SetMass(150);
+        trussR->SetMass(100);
         trussR->SetBodyFixed(false);
         trussR->SetCollide(false);
 
@@ -610,7 +613,7 @@ public:
             collision_type       // no collision geometry
             );
         trussL->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, mz + (rlwidth / 2) + (clwidth / 2) - (shoethickness)));
-        trussL->SetMass(150);
+        trussL->SetMass(100);
         trussL->SetBodyFixed(false);
         trussL->SetCollide(false);
 
@@ -1130,7 +1133,7 @@ public:
         //my_system.AddBody(Lflipper);
         load_truss->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, rlwidth / 2));
         load_truss->SetBodyFixed(fixflag);
-        load_truss->SetMass(10);
+        load_truss->SetMass(100);
 
 
         truss = load_truss;

@@ -70,6 +70,8 @@ public:
 
 
         // ..add a GUI slider to control throttle left via mouse
+        //virtual IGUIScrollBar * addScrollBar (bool horizontal, const core::rect< s32 > &rectangle, IGUIElement *parent=0, s32 id=-1)=0
+        //virtual IGUICheckBox * addCheckBox (bool checked, const core::rect< s32 > &rectangle, IGUIElement *parent=0, s32 id=-1, const wchar_t *text=0)=0
         scrollbar_throttleL =
             application->GetIGUIEnvironment()->addScrollBar(true, rect<s32>(510, 20, 650, 35), 0, 101);
         scrollbar_throttleL->setMax(100);
@@ -105,7 +107,7 @@ public:
         scrollbar_TL1 =
             application->GetIGUIEnvironment()->addScrollBar(true, rect<s32>(750, 20, 890, 35), 0, 105);
         scrollbar_TL1->setMax(100);
-        scrollbar_TL1->setPos(50);
+        scrollbar_TL1->setPos(25);
         text_TL1 =
             application->GetIGUIEnvironment()->addStaticText(L"tail link 1 ", rect<s32>(900, 20, 1000, 35), false);
 
@@ -113,10 +115,13 @@ public:
         scrollbar_TL2 =
             application->GetIGUIEnvironment()->addScrollBar(true, rect<s32>(750, 45, 890, 60), 0, 106);
         scrollbar_TL2->setMax(100);
-        scrollbar_TL2->setPos(50);
+        scrollbar_TL2->setPos(100);
         text_TL2 =
             application->GetIGUIEnvironment()->addStaticText(L"tail link 2 ", rect<s32>(900, 45, 1000, 60), false);
 
+        // ..add a GUI checkbox
+        checkbox_linkLocked = 
+            application->GetIGUIEnvironment()->addCheckBox(false, rect<s32>(900, 70, 1000, 85), 0, 2110);
     }
 
     bool OnEvent(const SEvent& event) {
@@ -206,6 +211,13 @@ public:
                     return true;
                 }
                 break;
+
+            case gui::EGET_CHECKBOX_CHANGED:
+                if (id == 2110) {
+                    return true;
+                }
+                break;
+
             default:
                 break;
             }
@@ -236,6 +248,7 @@ private:
     IGUIScrollBar* scrollbar_TL1;
     IGUIStaticText* text_TL2;
     IGUIScrollBar* scrollbar_TL2;
+    IGUICheckBox* checkbox_linkLocked;
 };
 
 
@@ -273,6 +286,8 @@ int main(int argc, char* argv[]) {
     double model_height = 5;
     //bool fixflag = true;
     bool fixflag = false;
+
+
     MySimpleTank* mytank = new MySimpleTank(my_system, application.GetSceneManager(), application.GetVideoDriver(), -5, model_height,fixflag);
     ChVector<> center_pos = mytank->wheelLB->GetPos() - mytank->wheelLF->GetPos();
 
@@ -287,7 +302,7 @@ int main(int argc, char* argv[]) {
         0
     );
 
-    MySimpleBackunit* mybackunit = new MySimpleBackunit(my_system, application.GetSceneManager(), application.GetVideoDriver(), -5-1.47-1-1.73, model_height, false);
+    MySimpleBackunit* mybackunit = new MySimpleBackunit(my_system, application.GetSceneManager(), application.GetVideoDriver(), -5-1.47-1-1.5, model_height, false);
 
 
     // Create the motor
@@ -326,7 +341,7 @@ int main(int argc, char* argv[]) {
     auto tailmesh = chrono_types::make_shared<ChBodyEasyMesh>(               //
         GetChronoDataFile("models/alacran_x10/back_unit_link.obj").c_str(),  // data file
         10000,                                                          // density
-        false,                                                         // do not compute mass and inertia
+        true,                                                         // do not compute mass and inertia
         true,                                                          // visualization?
         false,                                                         // collision?
         nullptr,               // no need for contact material
@@ -363,8 +378,8 @@ int main(int argc, char* argv[]) {
     
     auto tail_link2 = chrono_types::make_shared<ChLinkMotorRotationAngle>();  // left, front, upper, 1
     
-    tail_link2->Initialize(mybackunit->truss, 
-        tailmesh,
+    tail_link2->Initialize(tailmesh, 
+        mybackunit->truss,
         ChFrame<>(mytank->truss->GetPos() + ChVector<>(-1.47-1.73, 0, 0))
     );
     
@@ -395,8 +410,9 @@ int main(int argc, char* argv[]) {
     auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     double angleL = 0;
     double angleR = 0;
-    double TL_angle1 = 0;
-    double TL_angle2 = 0;
+    double TL_angle1 = CH_C_PI * (25 - 50) / 100;
+    double TL_angle2 = CH_C_PI * (100 - 50) / 100;
+    bool linklocked = false;
 
     // Create a ChFunction to be used for the ChLinkMotorRotationAngle
     auto msineangle = chrono_types::make_shared<ChFunction_Const>(0);       // phase [rad]
@@ -411,7 +427,7 @@ int main(int argc, char* argv[]) {
     // Use this function for 'converting' assets into Irrlicht meshes
     application.AssetUpdateAll();
 
-    MyEventReceiver receiver(&application, mytank, myflipper, mybackunit, &angleL, &angleR, &TL_angle1, &TL_angle2);
+    MyEventReceiver receiver(&application,mytank, myflipper, mybackunit, &angleL, &angleR, &TL_angle1, &TL_angle2);
     application.SetUserEventReceiver(&receiver);
 
     //
@@ -446,8 +462,8 @@ int main(int argc, char* argv[]) {
         //msineangle->Set_yconst(angle);
         motor_funL->SetSetpoint(angleL, 0.5);
         motor_funR->SetSetpoint(angleR, 0.5);
-        motor_funBack1->SetSetpoint(TL_angle1, 0.5);
-        motor_funBack2->SetSetpoint(TL_angle2, 0.5);
+        motor_funBack1->SetSetpoint(TL_angle1, 2);
+        motor_funBack2->SetSetpoint(TL_angle2, 2);
 
         application.DoStep();
 
