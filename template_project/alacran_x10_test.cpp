@@ -37,6 +37,25 @@ using namespace irr::gui;
 
 collision::ChCollisionSystemType collision_type = collision::ChCollisionSystemType::BULLET;
 
+// -----------------------------------------------------------------------------
+// IMU parameters
+// -----------------------------------------------------------------------------
+// Noise model attached to the sensor
+enum IMUNoiseModel {
+    NORMAL_DRIFT,  // gaussian drifting noise with noncorrelated equal distributions
+    IMU_NONE       // no noise added
+};
+IMUNoiseModel imu_noise_type = IMU_NONE;
+
+// IMU update rate in Hz
+int imu_update_rate = 100;
+
+// IMU lag (in seconds) between sensing and when data becomes accessible
+float imu_lag = 0;
+
+// IMU collection time (in seconds) of each sample
+float imu_collection_time = 0;
+
 //random step type 
 enum StepType {
     FLAT,
@@ -365,7 +384,6 @@ int main(int argc, char* argv[]) {
     // Connect the rotor and the stator and add the motor to the system:
     tail_link1->Initialize(tailmesh,                // body A (slave)
         mytank->truss,               // body B (master)
-        //ChFrame<>(mytank->wheelLB->GetPos())  // motor frame, in abs. coords
         ChFrame<>(mytank->truss->GetPos() + ChVector<>(-1.47, 0, 0))
     );
     
@@ -389,11 +407,88 @@ int main(int argc, char* argv[]) {
     tail_link2->SetAngleFunction(motor_funBack2);
 
 
-    //auto tail_link2 = chrono_types::make_shared<ChLinkLockRevolute>();  // left, front, upper, 1
+    // -----------------------
+    // Create a sensor manager
+    // -----------------------
+    auto manager = chrono_types::make_shared<ChSensorManager>(&my_system);
 
-    //tail_link2->Initialize(tailmesh, mybackunit->truss,
-    //    ChCoordsys<>(tailmesh->GetPos(), QUNIT));
-    //my_system.AddLink(tail_link2);
+    // ---------------------------------------------
+    // Create a IMU and add it to the sensor manager
+    // ---------------------------------------------
+    // Create the imu noise model
+    std::shared_ptr<ChNoiseModel> acc_noise_model;
+    std::shared_ptr<ChNoiseModel> gyro_noise_model;
+    std::shared_ptr<ChNoiseModel> mag_noise_model;
+
+    acc_noise_model = chrono_types::make_shared<ChNoiseNone>();
+    gyro_noise_model = chrono_types::make_shared<ChNoiseNone>();
+    mag_noise_model = chrono_types::make_shared<ChNoiseNone>();
+
+    auto imu_offset_pose = chrono::ChFrame<double>({ 0, 0, 0 }, Q_from_AngAxis(0, { 1, 0, 0 }));
+    auto acc = chrono_types::make_shared<ChAccelerometerSensor>(myflipper->trussR,    // body to which the IMU is attached
+        imu_update_rate,   // update rate
+        imu_offset_pose,   // offset pose from body
+        acc_noise_model);  // IMU noise model
+    acc->SetName("IMU - Accelerometer");
+    acc->SetLag(imu_lag);
+    acc->SetCollectionWindow(imu_collection_time);
+    acc->PushFilter(chrono_types::make_shared<ChFilterAccelAccess>());  // Add a filter to access the imu data
+    manager->AddSensor(acc);                                            // Add the IMU sensor to the sensor manager
+
+    auto gyro = chrono_types::make_shared<ChGyroscopeSensor>(myflipper->trussR,     // body to which the IMU is attached
+        imu_update_rate,    // update rate
+        imu_offset_pose,    // offset pose from body
+        gyro_noise_model);  // IMU noise model
+    gyro->SetName("IMU - Accelerometer");
+    gyro->SetLag(imu_lag);
+    gyro->SetCollectionWindow(imu_collection_time);
+    gyro->PushFilter(chrono_types::make_shared<ChFilterGyroAccess>());  // Add a filter to access the imu data
+    manager->AddSensor(gyro);                                           // Add the IMU sensor to the sensor manager
+
+    UserAccelBufferPtr bufferAcc;
+    UserGyroBufferPtr bufferGyro;
+
+    double acc_data[3];
+    acc_data[0] = 0;
+    acc_data[1] = 1;
+    acc_data[2] = 2;
+
+    std::wstringstream ss[3];
+    IGUIStaticText* acc_data_text[3];
+
+    ss[0] << L"x acc :";
+    ss[1] << L"y acc :";
+    ss[2] << L"z acc :";
+
+    for (int i = 0; i < 3; i++) {
+        ss[i] << acc_data[i];
+
+        acc_data_text[i] =
+            application.GetIGUIEnvironment()->addStaticText(ss[i].str().c_str(), rect<s32>(300, 20 + (i * 25), 750, 35 + i * 25), false);
+
+    }
+
+    int imu_last_launch = 0;
+
+    // -----------------
+    // Initialize output
+    // -----------------
+
+    // Output directories
+    auto name = "hoge";
+    //auto size = 48;
+
+    typedef struct
+    {
+        double t;
+        double acc_data[3];
+        double gyro_data[3];
+    } SHARED_MEMORY_DATA;
+
+    SHARED_MEMORY_DATA* gMappingObject = NULL;
+
+    HANDLE hSharedMemory = CreateFileMapping(NULL, NULL, PAGE_READWRITE, NULL, sizeof(SHARED_MEMORY_DATA), name);
+    auto pMemory = (SHARED_MEMORY_DATA*)MapViewOfFile(hSharedMemory, FILE_MAP_ALL_ACCESS, NULL, NULL, sizeof(SHARED_MEMORY_DATA));
 
 
     //---------------------
@@ -465,10 +560,45 @@ int main(int argc, char* argv[]) {
         motor_funBack1->SetSetpoint(TL_angle1, 2);
         motor_funBack2->SetSetpoint(TL_angle2, 2);
 
+        bufferAcc = acc->GetMostRecentBuffer<UserAccelBufferPtr>();
+        bufferGyro = gyro->GetMostRecentBuffer<UserGyroBufferPtr>();
+        if (bufferAcc->Buffer && bufferGyro->Buffer) {
+            // Save the imu data to file
+            acc_data[0] = bufferAcc->Buffer[0].X;
+            acc_data[1] = bufferAcc->Buffer[0].Y;
+            acc_data[2] = bufferAcc->Buffer[0].Z;
+            GyroData gyro_data = bufferGyro->Buffer[0];
+
+            for (int i = 0; i < 3; i++) {
+                ss[i].str(L"");
+                if (i == 0) ss[i] << L"X acc:";
+                else if (i == 1)ss[i] << L"Y acc:";
+                else ss[i] << L"Z acc:";
+
+                ss[i] << acc_data[i];
+                acc_data_text[i]->setText(ss[i].str().c_str());
+
+            }
+
+            //imu_csv << std::fixed << std::setprecision(6);
+            pMemory->t = t;
+            pMemory->acc_data[0] = acc_data[0]/10.0;
+            pMemory->acc_data[1] = -acc_data[2]/10.0;
+            pMemory->acc_data[2] = -acc_data[1]/10.0;
+            pMemory->gyro_data[0] = gyro_data.Roll;
+            pMemory->gyro_data[1] = gyro_data.Pitch;
+            pMemory->gyro_data[2] = gyro_data.Yaw;
+            imu_last_launch = bufferGyro->LaunchedCount;
+            //printf("%0.4f %0.4f %0.4f \n", acc_data.X, acc_data.Y, acc_data.Z);
+        }
+        manager->Update();
+
         application.DoStep();
 
         application.EndScene();
     }
+    UnmapViewOfFile(pMemory);
+    CloseHandle(hSharedMemory);
     if (mytank)
         delete mytank;
 

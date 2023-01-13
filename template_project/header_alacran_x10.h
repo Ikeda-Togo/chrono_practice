@@ -91,7 +91,7 @@ public:
         //my_system.AddBody(Lflipper);
         load_truss->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, rlwidth / 2));
         load_truss->SetBodyFixed(fixflag);
-        load_truss->SetMass(350);
+        load_truss->SetMass(700);
         load_truss->SetInertiaXX(ChVector<>(13.8, 13.5, 10));
 
 
