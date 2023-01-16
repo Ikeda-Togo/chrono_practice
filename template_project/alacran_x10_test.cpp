@@ -233,6 +233,16 @@ public:
 
             case gui::EGET_CHECKBOX_CHANGED:
                 if (id == 2110) {
+                    auto mfun = std::static_pointer_cast<ChFunction_Const>(mtank->link_motorLB->GetSpeedFunction());
+                    mfun->Set_yconst(0);
+                    mfun = std::static_pointer_cast<ChFunction_Const>(mflipper->link_motorLB->GetSpeedFunction());
+                    mfun->Set_yconst(0);
+
+            
+                    mfun = std::static_pointer_cast<ChFunction_Const>(mtank->link_motorRB->GetSpeedFunction());
+                    mfun->Set_yconst(0);
+                    mfun = std::static_pointer_cast<ChFunction_Const>(mflipper->link_motorRB->GetSpeedFunction());
+                    mfun->Set_yconst(0);
                     return true;
                 }
                 break;
@@ -286,6 +296,8 @@ int main(int argc, char* argv[]) {
     // ..the world
     auto ground_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     ground_mat->SetFriction(1.0);
+    ground_mat->SetRollingFriction(0.003);
+    ground_mat->SetSpinningFriction(0.003);
 
     auto my_ground = chrono_types::make_shared<ChBodyEasyBox>(60, 2, 60, 1000, true, true, ground_mat);
     my_ground->SetPos(ChVector<>(0, -1, 0));
@@ -302,7 +314,7 @@ int main(int argc, char* argv[]) {
     //
     // ..the tank (this class - see above - is a 'set' of bodies and links, automatically added at creation)
 
-    double model_height = 5;
+    double model_height = 0;
     //bool fixflag = true;
     bool fixflag = false;
 
@@ -373,7 +385,8 @@ int main(int argc, char* argv[]) {
     tailmesh->SetMass(10);
 
     auto color_tail = chrono_types::make_shared<ChColorAsset>();
-    color_tail->SetColor(ChColor(0.8f, 0.8f, 0.8f));
+    color_tail->SetColor(ChColor(0.004f, 0.004f, 0.004f));
+    color_tail->SetFading(0.5f);
     tailmesh->AddAsset(color_tail);
 
     std::cout << mytank->truss->GetPos() << std::endl;
@@ -555,8 +568,8 @@ int main(int argc, char* argv[]) {
 
         //std::cout << angle << std::endl;
         //msineangle->Set_yconst(angle);
-        motor_funL->SetSetpoint(angleL, 0.5);
-        motor_funR->SetSetpoint(angleR, 0.5);
+        motor_funL->SetSetpoint(angleL, 2);
+        motor_funR->SetSetpoint(angleR, 2);
         motor_funBack1->SetSetpoint(TL_angle1, 2);
         motor_funBack2->SetSetpoint(TL_angle2, 2);
 

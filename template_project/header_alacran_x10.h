@@ -60,7 +60,7 @@ public:
         //double shoe2length = 0.28; //ベルトユニットの長さ
         double shoemass = 1;       //ベルトユニットの重さ
         double radiustrack = 0.52; //クローラの半径
-        double wheeldiameter = 0.47 * 2; //プーリーの直径 初期0.045
+        double wheeldiameter = 0.50 * 2; //プーリーの直径 初期0.045
         int nwrap = 6;  //クローラの曲がってるとこのユニットの数
         int ntiles = 6; //まっすぐなとこのユニットの数
         double rlwidth = 2.16;
@@ -93,12 +93,13 @@ public:
         load_truss->SetBodyFixed(fixflag);
         load_truss->SetMass(700);
         load_truss->SetInertiaXX(ChVector<>(13.8, 13.5, 10));
+        //load_truss->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
 
 
         truss = load_truss;
 
         auto color_truss = chrono_types::make_shared<ChColorAsset>();
-        color_truss->SetColor(ChColor(0.1f, 0.1f, 0.0f));
+        color_truss->SetColor(ChColor(0.004f, 0.004f, 0.004f));
         truss->AddAsset(color_truss);
 
         my_system.Add(truss);
@@ -140,7 +141,7 @@ public:
         wheelRF->SetCollide(true);
 
         auto color_wheel = chrono_types::make_shared<ChColorAsset>();
-        color_wheel->SetColor(ChColor(0.0f, 0.0f, 0.7f));
+        color_wheel->SetColor(ChColor(0.004f, 0.004f, 0.004f));
         wheelRF->AddAsset(color_wheel);
 
         // .. create the revolute joint between the wheel and the truss
@@ -176,6 +177,10 @@ public:
         wheelLF->GetCollisionModel()->BuildModel();
         wheelLF->SetCollide(true);
 
+        auto color_wheel1 = chrono_types::make_shared<ChColorAsset>();
+        color_wheel1->SetColor(ChColor(0.004f, 0.004f, 0.004f));
+        wheelLF->AddAsset(color_wheel1);
+
         // .. create the revolute joint between the wheel and the truss
         link_revoluteLF = chrono_types::make_shared<ChLinkLockRevolute>();  // left, front, upper, 1
         link_revoluteLF->Initialize(wheelLF, truss,
@@ -209,6 +214,8 @@ public:
             cyl_displB);
         wheelRB->GetCollisionModel()->BuildModel();
         wheelRB->SetCollide(true);
+
+        wheelRB->AddAsset(color_wheel1);
 
         // .. create the motor joint between the wheel and the truss (simplified motor model: just impose speed..)
         link_motorRB = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
@@ -244,6 +251,8 @@ public:
             cyl_displB);
         wheelLB->GetCollisionModel()->BuildModel();
         wheelLB->SetCollide(true);
+
+        wheelLB->AddAsset(color_wheel1);
 
         // .. create the motor joint between the wheel and the truss (simplified motor model: just impose speed..)
         link_motorLB = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
@@ -575,7 +584,7 @@ public:
         double shoethickness = 0.25;
         double shoemass = 3;
         double radiustrack = 0.52;
-        double wheeldiameter = 0.45 * 2; //タイヤ直径
+        double wheeldiameter = 0.47 * 2; //タイヤ直径
         int nwrap = 6;
         int ntiles = 6;
         double rlwidth = 2.16;
@@ -593,29 +602,61 @@ public:
 
         // --- The tank body ---
 
-        trussR = std::make_shared<ChBodyEasyBox>(passo, wheeldiameter / 2, 0.01,  // x, y, z dimensions
-            10000,       // density
-            chrono_types::make_shared<ChMaterialSurfaceNSC>(),       // create visualization asset
-            collision_type       // no collision geometry
-            );
-
+        trussR = chrono_types::make_shared<ChBodyEasyMesh>(               //
+            GetChronoDataFile("models/alacran_x10/flipper_truss_wall.obj").c_str(),   // data file
+            1000,                                                          // density
+            true,                                                         // do not compute mass and inertia
+            true,                                                          // visualization?
+            false,                                                         // collision?
+            chrono_types::make_shared<ChMaterialSurfaceNSC>(),                                                       // no need for contact material
+            0.0);                                                            // mesh sweep sphere radius
         trussR->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, mz + (rlwidth / 2) - (clwidth / 2) + (shoethickness)));
         trussR->SetMass(100);
-        trussR->SetBodyFixed(false);
-        trussR->SetCollide(false);
+        //trussR->SetInertiaXX(ChVector<>(13.8, 13.5, 10));
+
+
+
+        //trussR = std::make_shared<ChBodyEasyBox>(passo, wheeldiameter / 2, 0.01,  // x, y, z dimensions
+        //    10000,       // density
+        //    chrono_types::make_shared<ChMaterialSurfaceNSC>(),       // create visualization asset
+        //    collision_type       // no collision geometry
+        //    );
+
+        //trussR->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, mz + (rlwidth / 2) - (clwidth / 2) + (shoethickness)));
+        //trussR->SetMass(100);
+        //trussR->SetBodyFixed(false);
+        //trussR->SetCollide(false);
+
+        auto color_truss = chrono_types::make_shared<ChColorAsset>();
+        color_truss->SetColor(ChColor(0.004f, 0.004f, 0.004f));
+        trussR->AddAsset(color_truss);
 
         my_system.Add(trussR);
 
 
-        trussL = std::make_shared<ChBodyEasyBox>(passo, wheeldiameter / 2, 0.01,  // x, y, z dimensions
-            10000,       // density
-            chrono_types::make_shared<ChMaterialSurfaceNSC>(),       // create visualization asset
-            collision_type       // no collision geometry
-            );
+        trussL = chrono_types::make_shared<ChBodyEasyMesh>(               //
+            GetChronoDataFile("models/alacran_x10/flipper_truss_wall.obj").c_str(),   // data file
+            1000,                                                          // density
+            true,                                                         // do not compute mass and inertia
+            true,                                                          // visualization?
+            false,                                                         // collision?
+            chrono_types::make_shared<ChMaterialSurfaceNSC>(),                                                       // no need for contact material
+            0.0);                                                            // mesh sweep sphere radius
+        //my_system.AddBody(Lflipper);
         trussL->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, mz + (rlwidth / 2) + (clwidth / 2) - (shoethickness)));
         trussL->SetMass(100);
-        trussL->SetBodyFixed(false);
-        trussL->SetCollide(false);
+
+        //trussL = std::make_shared<ChBodyEasyBox>(passo, wheeldiameter / 2, 0.01,  // x, y, z dimensions
+        //    10000,       // density
+        //    chrono_types::make_shared<ChMaterialSurfaceNSC>(),       // create visualization asset
+        //    collision_type       // no collision geometry
+        //    );
+        //trussL->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, mz + (rlwidth / 2) + (clwidth / 2) - (shoethickness)));
+        //trussL->SetMass(100);
+        //trussL->SetBodyFixed(false);
+        //trussL->SetCollide(false);
+
+        trussL->AddAsset(color_truss);
 
         my_system.Add(trussL);
 
@@ -652,7 +693,7 @@ public:
         wheelRF->SetCollide(true);
 
         auto color_wheel = chrono_types::make_shared<ChColorAsset>();
-        color_wheel->SetColor(ChColor(0.2f, 0.2f, 0.2f));
+        color_wheel->SetColor(ChColor(0.004f, 0.004f, 0.004f));
         wheelRF->AddAsset(color_wheel);
 
         // .. create the revolute joint between the wheel and the truss
@@ -688,6 +729,8 @@ public:
         wheelLF->GetCollisionModel()->BuildModel();
         wheelLF->SetCollide(true);
 
+        wheelLF->AddAsset(color_wheel);
+
         // .. create the revolute joint between the wheel and the truss
         link_revoluteLF = chrono_types::make_shared<ChLinkLockRevolute>();  // left, front, upper, 1
         link_revoluteLF->Initialize(wheelLF, trussL,
@@ -721,6 +764,8 @@ public:
             cyl_displB);
         wheelRB->GetCollisionModel()->BuildModel();
         wheelRB->SetCollide(true);
+
+        wheelRB->AddAsset(color_wheel);
 
         // .. create the motor joint between the wheel and the truss (simplified motor model: just impose speed..)
         link_motorRB = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
@@ -756,6 +801,8 @@ public:
             cyl_displB);
         wheelLB->GetCollisionModel()->BuildModel();
         wheelLB->SetCollide(true);
+
+        wheelLB->AddAsset(color_wheel);
 
         // .. create the motor joint between the wheel and the truss (simplified motor model: just impose speed..)
         link_motorLB = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
@@ -1139,7 +1186,7 @@ public:
         truss = load_truss;
 
         auto color_truss = chrono_types::make_shared<ChColorAsset>();
-        color_truss->SetColor(ChColor(0.1f, 0.1f, 0.0f));
+        color_truss->SetColor(ChColor(0.1f, 0.1f, 0.1f));
         truss->AddAsset(color_truss);
 
         my_system.Add(truss);
