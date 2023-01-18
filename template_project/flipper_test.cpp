@@ -1190,6 +1190,20 @@ int main(int argc, char* argv[]) {
     link_tail->Lock(true);
     my_system.AddLink(link_tail);
 
+
+    auto imumesh = chrono_types::make_shared<ChBodyEasyBox>(0.5, 0.1, 0.5, 30000, true, false, chrono_types::make_shared<ChMaterialSurfaceNSC>());
+    imumesh->SetPos(mytank->truss->GetPos()+ChVector<>(0, 0.5, 0));
+    imumesh->SetMass(10);
+    std::cout << "mass is" << imumesh->GetMass() << std::endl;
+    imumesh->SetCollide(true);
+    my_system.Add(imumesh);
+
+    auto link_imu = chrono_types::make_shared<ChLinkLockRevolute>();  // left, front, upper, 1
+    link_imu->Initialize(imumesh, mytank->truss,
+        ChCoordsys<>(tailmesh->GetPos(), QUNIT));
+    link_imu->Lock(true);
+    my_system.AddLink(link_imu);
+
     //auto pole = chrono_types::make_shared<ChBodyEasyBox>(0.1,0.1,3, 30000, true, false, nullptr);
     //pole->SetPos(ChVector<>(0,5,0));
     //pole->SetBodyFixed(true);
@@ -1215,7 +1229,7 @@ int main(int argc, char* argv[]) {
     mag_noise_model = chrono_types::make_shared<ChNoiseNone>();
 
     auto imu_offset_pose = chrono::ChFrame<double>({ 0, 0, 0 }, Q_from_AngAxis(0, { 1, 0, 0 }));
-    auto acc = chrono_types::make_shared<ChAccelerometerSensor>(myflipper->trussR,    // body to which the IMU is attached
+    auto acc = chrono_types::make_shared<ChAccelerometerSensor>(imumesh,    // body to which the IMU is attached
         imu_update_rate,   // update rate
         imu_offset_pose,   // offset pose from body
         acc_noise_model);  // IMU noise model
@@ -1225,7 +1239,7 @@ int main(int argc, char* argv[]) {
     acc->PushFilter(chrono_types::make_shared<ChFilterAccelAccess>());  // Add a filter to access the imu data
     manager->AddSensor(acc);                                            // Add the IMU sensor to the sensor manager
 
-    auto gyro = chrono_types::make_shared<ChGyroscopeSensor>(myflipper->trussR,     // body to which the IMU is attached
+    auto gyro = chrono_types::make_shared<ChGyroscopeSensor>(imumesh,     // body to which the IMU is attached
         imu_update_rate,    // update rate
         imu_offset_pose,    // offset pose from body
         gyro_noise_model);  // IMU noise model

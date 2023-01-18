@@ -36,19 +36,20 @@ class RandomStep
 private:
     double block_vol = 20;
 public:
-    double size = 10;
-    double height = 3;
+    double size = 20;
+    double height = 2;
     double thickness = 0.2;
 
-    double block_size = 0.5;
-    std::shared_ptr<ChBody> random_block[30][30];
+    double block_size = 1;
+    std::shared_ptr<ChBody> random_block[100][100];
 
 
     enum StepType {
         FLAT,
         RANDOM,
         SIN,
-        STEP
+        STEP,
+        STEP_RANDOM
     };
     //StepType step_type;
 
@@ -111,7 +112,7 @@ public:
         case RANDOM:
             for (int i = 0; i < size / block_size; i++) {
                 for (int j = 0; j < size / block_size; j++) {
-                    double random_height = ChRandom() * 0.5;
+                    double random_height = ChRandom() ;
                     random_block[i][j] = chrono_types::make_shared<ChBodyEasyBox>(block_size, random_height, block_size, 30000, true, true, ground_mat);
                     random_block[i][j]->SetPos(ChVector<>(-size / 2 + i * block_size + block_size / 2, random_height / 2, -size / 2 + j * block_size + block_size / 2));
                     random_block[i][j]->SetBodyFixed(true);
@@ -155,6 +156,31 @@ public:
                     }
 
                     random_block[i][j] = chrono_types::make_shared<ChBodyEasyBox>(block_size, height, block_size, 30000, true, true, ground_mat);
+                    random_block[i][j]->SetPos(ChVector<>(-size / 2 + i * block_size + block_size / 2, height / 2, -size / 2 + j * block_size + block_size / 2));
+                    random_block[i][j]->SetBodyFixed(true);
+                    auto color_truss = chrono_types::make_shared<ChColorAsset>();
+                    color_truss->SetColor(ChColor(0.2f, 0.2f, 0.2f));
+                    random_block[i][j]->AddAsset(color_truss);
+                    random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/cubetexture_borders.png")));
+                    //random_block[i][j]->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/spheretexture.png")));
+                    my_system.Add(random_block[i][j]);
+                }
+            }
+            break;
+
+        case STEP_RANDOM:
+            for (int i = 0; i < size / block_size; i++) {
+                for (int j = 0; j < size / block_size; j++) {
+                    double height = 0;
+                    double random_height = ChRandom();
+                    if (i < (size/block_size)/2) {
+                        height = 2;
+                    }
+                    else {
+                        height = 1;
+                    }
+
+                    random_block[i][j] = chrono_types::make_shared<ChBodyEasyBox>(block_size, height+random_height, block_size, 30000, true, true, ground_mat);
                     random_block[i][j]->SetPos(ChVector<>(-size / 2 + i * block_size + block_size / 2, height / 2, -size / 2 + j * block_size + block_size / 2));
                     random_block[i][j]->SetBodyFixed(true);
                     auto color_truss = chrono_types::make_shared<ChColorAsset>();

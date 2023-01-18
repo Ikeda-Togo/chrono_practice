@@ -19,7 +19,8 @@
 
 #include "header_random_step.h"
 //#include "header_alacran.h"
-#include "header_alacran_x10.h"
+//#include "header_alacran_x10.h"
+#include "header_alacran_x10_Zaxis.h"
 
 // Use the namespaces of Chrono
 using namespace chrono;
@@ -300,12 +301,12 @@ int main(int argc, char* argv[]) {
     ground_mat->SetSpinningFriction(0.003);
 
     auto my_ground = chrono_types::make_shared<ChBodyEasyBox>(60, 2, 60, 1000, true, true, ground_mat);
-    my_ground->SetPos(ChVector<>(0, -1, 0));
+    my_ground->SetPos(ChVector<>(0, -10, 0));
     my_ground->SetBodyFixed(true);
     my_ground->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/blue.png")));
     my_system.AddBody(my_ground);
 
-    my_system.Set_G_acc({ 0, -9.81, 0 });
+    my_system.Set_G_acc({ 0, 0, -9.81 });
 
 
     //------------------------------------------
@@ -314,9 +315,9 @@ int main(int argc, char* argv[]) {
     //
     // ..the tank (this class - see above - is a 'set' of bodies and links, automatically added at creation)
 
-    double model_height = 0;
-    //bool fixflag = true;
-    bool fixflag = false;
+    double model_height = 3;
+    bool fixflag = true;
+    //bool fixflag = false;
 
 
     MySimpleTank* mytank = new MySimpleTank(my_system, application.GetSceneManager(), application.GetVideoDriver(), -5, model_height,fixflag);
@@ -329,8 +330,8 @@ int main(int argc, char* argv[]) {
         application.GetSceneManager(),
         application.GetVideoDriver(),
         mytank->wheelLF->GetPos().x(),
-         model_height, 
-        0
+        0,
+        model_height 
     );
 
     MySimpleBackunit* mybackunit = new MySimpleBackunit(my_system, application.GetSceneManager(), application.GetVideoDriver(), -5-1.47-1-1.5, model_height, false);
@@ -379,7 +380,7 @@ int main(int argc, char* argv[]) {
         0);                                                            // mesh sweep sphere radius
     //tailmesh->SetBodyFixed(true);
     my_system.Add(tailmesh);
-    tailmesh->SetRot(Q_from_AngAxis(0, VECT_X));
+    tailmesh->SetRot(Q_from_AngAxis(-90 * CH_C_DEG_TO_RAD, VECT_X));
     tailmesh->SetPos(mytank->truss->GetPos() + ChVector<>(-1.47-0.865, 0, 0));
     //tailmesh->SetPos(mytank->wheelLB->GetPos());
     tailmesh->SetMass(10);
@@ -397,8 +398,9 @@ int main(int argc, char* argv[]) {
     // Connect the rotor and the stator and add the motor to the system:
     tail_link1->Initialize(tailmesh,                // body A (slave)
         mytank->truss,               // body B (master)
-        ChFrame<>(mytank->truss->GetPos() + ChVector<>(-1.47, 0, 0))
-    );
+        //ChCoordsys<>(mytank->truss->GetPos() + ChVector<>(-1.47, 0, 0), Q_from_AngAxis(-90 * CH_C_DEG_TO_RAD, VECT_X))
+        ChFrame<>(mytank->truss->GetPos() + ChVector<>(-1.47, 0, 0), Q_from_AngAxis(-90 * CH_C_DEG_TO_RAD, VECT_X))
+        );
     
     my_system.Add(tail_link1);
 
@@ -420,19 +422,6 @@ int main(int argc, char* argv[]) {
     tail_link2->SetAngleFunction(motor_funBack2);
 
 
-    auto imumesh = chrono_types::make_shared<ChBodyEasyBox>(0.5, 0.4, 0.5, 1000, true, false, chrono_types::make_shared<ChMaterialSurfaceNSC>());
-    imumesh->SetPos(mytank->truss->GetPos() + ChVector<>(0, 0.45, 0));
-    imumesh->SetMass(1);
-    std::cout << "mass is" << imumesh->GetMass() << std::endl;
-    imumesh->SetCollide(false);
-    my_system.Add(imumesh);
-
-    auto link_imu = chrono_types::make_shared<ChLinkLockRevolute>();  // left, front, upper, 1
-    link_imu->Initialize(imumesh, mytank->truss,
-        ChCoordsys<>(tailmesh->GetPos(), QUNIT));
-    link_imu->Lock(true);
-    my_system.AddLink(link_imu);
-
     // -----------------------
     // Create a sensor manager
     // -----------------------
@@ -450,10 +439,8 @@ int main(int argc, char* argv[]) {
     gyro_noise_model = chrono_types::make_shared<ChNoiseNone>();
     mag_noise_model = chrono_types::make_shared<ChNoiseNone>();
 
-    std::cout << 90 * CH_C_DEG_TO_RAD << std::endl;
-    //auto imu_offset_pose = chrono::ChFrame<double>({ 0, 0, 0 }, Q_from_AngAxis(90 * CH_C_DEG_TO_RAD, VECT_X));
-    auto imu_offset_pose = chrono::ChFrame<double>({ 0, 0, 0 }, Q_from_AngAxis(90 * CH_C_DEG_TO_RAD, { 1, 1, 1 }));
-    auto acc = chrono_types::make_shared<ChAccelerometerSensor>(imumesh,    // body to which the IMU is attached
+    auto imu_offset_pose = chrono::ChFrame<double>({ 0, 0, 0 }, Q_from_AngAxis(0, { 1, 0, 0 }));
+    auto acc = chrono_types::make_shared<ChAccelerometerSensor>(myflipper->trussR,    // body to which the IMU is attached
         imu_update_rate,   // update rate
         imu_offset_pose,   // offset pose from body
         acc_noise_model);  // IMU noise model
@@ -463,7 +450,7 @@ int main(int argc, char* argv[]) {
     acc->PushFilter(chrono_types::make_shared<ChFilterAccelAccess>());  // Add a filter to access the imu data
     manager->AddSensor(acc);                                            // Add the IMU sensor to the sensor manager
 
-    auto gyro = chrono_types::make_shared<ChGyroscopeSensor>(imumesh,     // body to which the IMU is attached
+    auto gyro = chrono_types::make_shared<ChGyroscopeSensor>(myflipper->trussR,     // body to which the IMU is attached
         imu_update_rate,    // update rate
         imu_offset_pose,    // offset pose from body
         gyro_noise_model);  // IMU noise model
@@ -471,7 +458,7 @@ int main(int argc, char* argv[]) {
     gyro->SetLag(imu_lag);
     gyro->SetCollectionWindow(imu_collection_time);
     gyro->PushFilter(chrono_types::make_shared<ChFilterGyroAccess>());  // Add a filter to access the imu data
-    manager->AddSensor(gyro);                                        // Add the IMU sensor to the sensor manager
+    manager->AddSensor(gyro);                                           // Add the IMU sensor to the sensor manager
 
     UserAccelBufferPtr bufferAcc;
     UserGyroBufferPtr bufferGyro;
@@ -533,7 +520,7 @@ int main(int argc, char* argv[]) {
     auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     double angleL = 0;
     double angleR = 0;
-    double TL_angle1 = CH_C_PI * (25 - 50) / 100;
+    double TL_angle1 = CH_C_PI * (100 - 50) / 100;
     double TL_angle2 = CH_C_PI * (100 - 50) / 100;
     bool linklocked = false;
 

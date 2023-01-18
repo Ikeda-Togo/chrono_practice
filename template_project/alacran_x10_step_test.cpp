@@ -61,7 +61,8 @@ enum StepType {
     FLAT,
     RANDOM,
     SIN,
-    STEP
+    STEP,
+    STEP_RANDOM
 };
 
 
@@ -173,7 +174,7 @@ public:
                     mfun = std::static_pointer_cast<ChFunction_Const>(mflipper->link_motorRB->GetSpeedFunction());
                     mfun->Set_yconst(newthrottleR * 6);
 
-                    //後部ユニットの速度
+                    //蠕碁Κ繝ｦ繝九ャ繝医�ｮ騾溷ｺｦ
                     mfun = std::static_pointer_cast<ChFunction_Const>(mbackunit->link_motorRB->GetSpeedFunction());
                     mfun->Set_yconst((newthrottleR * 6 + newthrottleL * 6)/2);
                     mfun = std::static_pointer_cast<ChFunction_Const>(mbackunit->link_motorLB->GetSpeedFunction());
@@ -208,6 +209,7 @@ public:
                 if (id == 103) {  // id of 'throttleL' slider..
                     s32 pos = ((IGUIScrollBar*)event.GUIEvent.Caller)->getPos();
                     *mangleL = CH_C_PI * (pos - 50) / 100;
+                    *mangleR = CH_C_PI * (pos - 50) / 100;
 
                     return true;
                 }
@@ -291,11 +293,11 @@ int main(int argc, char* argv[]) {
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
-    application.AddTypicalCamera(core::vector3df(-10, 10, 1.4), core::vector3df(-5, 5, 1.4));
+    application.AddTypicalCamera(core::vector3df(2, 4, 15), core::vector3df(2, 2, 5));
 
     // ..the world
     auto ground_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
-    ground_mat->SetFriction(1.0);
+    ground_mat->SetFriction(0.8);
     ground_mat->SetRollingFriction(0.003);
     ground_mat->SetSpinningFriction(0.003);
 
@@ -306,6 +308,14 @@ int main(int argc, char* argv[]) {
     my_system.AddBody(my_ground);
 
     my_system.Set_G_acc({ 0, -9.81, 0 });
+
+    auto obj_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    obj_mat->SetFriction(0.5);
+    auto box = chrono_types::make_shared<ChBodyEasyBox>(1.5, 1.5, 10, 30000, true, true, obj_mat);
+    box->SetPos(ChVector<>(5, 0.25, 0));
+    box->SetCollide(true);
+    box->SetBodyFixed(true);
+    my_system.Add(box);
 
 
     //------------------------------------------
@@ -420,19 +430,6 @@ int main(int argc, char* argv[]) {
     tail_link2->SetAngleFunction(motor_funBack2);
 
 
-    auto imumesh = chrono_types::make_shared<ChBodyEasyBox>(0.5, 0.4, 0.5, 1000, true, false, chrono_types::make_shared<ChMaterialSurfaceNSC>());
-    imumesh->SetPos(mytank->truss->GetPos() + ChVector<>(0, 0.45, 0));
-    imumesh->SetMass(1);
-    std::cout << "mass is" << imumesh->GetMass() << std::endl;
-    imumesh->SetCollide(false);
-    my_system.Add(imumesh);
-
-    auto link_imu = chrono_types::make_shared<ChLinkLockRevolute>();  // left, front, upper, 1
-    link_imu->Initialize(imumesh, mytank->truss,
-        ChCoordsys<>(tailmesh->GetPos(), QUNIT));
-    link_imu->Lock(true);
-    my_system.AddLink(link_imu);
-
     // -----------------------
     // Create a sensor manager
     // -----------------------
@@ -450,10 +447,8 @@ int main(int argc, char* argv[]) {
     gyro_noise_model = chrono_types::make_shared<ChNoiseNone>();
     mag_noise_model = chrono_types::make_shared<ChNoiseNone>();
 
-    std::cout << 90 * CH_C_DEG_TO_RAD << std::endl;
-    //auto imu_offset_pose = chrono::ChFrame<double>({ 0, 0, 0 }, Q_from_AngAxis(90 * CH_C_DEG_TO_RAD, VECT_X));
-    auto imu_offset_pose = chrono::ChFrame<double>({ 0, 0, 0 }, Q_from_AngAxis(90 * CH_C_DEG_TO_RAD, { 1, 1, 1 }));
-    auto acc = chrono_types::make_shared<ChAccelerometerSensor>(imumesh,    // body to which the IMU is attached
+    auto imu_offset_pose = chrono::ChFrame<double>({ 0, 0, 0 }, Q_from_AngAxis(0, { 1, 0, 0 }));
+    auto acc = chrono_types::make_shared<ChAccelerometerSensor>(myflipper->trussR,    // body to which the IMU is attached
         imu_update_rate,   // update rate
         imu_offset_pose,   // offset pose from body
         acc_noise_model);  // IMU noise model
@@ -463,7 +458,7 @@ int main(int argc, char* argv[]) {
     acc->PushFilter(chrono_types::make_shared<ChFilterAccelAccess>());  // Add a filter to access the imu data
     manager->AddSensor(acc);                                            // Add the IMU sensor to the sensor manager
 
-    auto gyro = chrono_types::make_shared<ChGyroscopeSensor>(imumesh,     // body to which the IMU is attached
+    auto gyro = chrono_types::make_shared<ChGyroscopeSensor>(myflipper->trussR,     // body to which the IMU is attached
         imu_update_rate,    // update rate
         imu_offset_pose,    // offset pose from body
         gyro_noise_model);  // IMU noise model
@@ -471,7 +466,7 @@ int main(int argc, char* argv[]) {
     gyro->SetLag(imu_lag);
     gyro->SetCollectionWindow(imu_collection_time);
     gyro->PushFilter(chrono_types::make_shared<ChFilterGyroAccess>());  // Add a filter to access the imu data
-    manager->AddSensor(gyro);                                        // Add the IMU sensor to the sensor manager
+    manager->AddSensor(gyro);                                           // Add the IMU sensor to the sensor manager
 
     UserAccelBufferPtr bufferAcc;
     UserGyroBufferPtr bufferGyro;
@@ -534,7 +529,7 @@ int main(int argc, char* argv[]) {
     double angleL = 0;
     double angleR = 0;
     double TL_angle1 = CH_C_PI * (25 - 50) / 100;
-    double TL_angle2 = CH_C_PI * (100 - 50) / 100;
+    double TL_angle2 = CH_C_PI * (90 - 50) / 100;
     bool linklocked = false;
 
     // Create a ChFunction to be used for the ChLinkMotorRotationAngle
@@ -564,7 +559,7 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     //
     //application.SetTimestep(1);
-    application.SetTimestep(0.01);
+    application.SetTimestep(0.012);
     application.SetTryRealtime(true);
 
     while (application.GetDevice()->run()) {
@@ -583,10 +578,10 @@ int main(int argc, char* argv[]) {
 
         //std::cout << angle << std::endl;
         //msineangle->Set_yconst(angle);
-        motor_funL->SetSetpoint(angleL, 2);
-        motor_funR->SetSetpoint(angleR, 2);
-        motor_funBack1->SetSetpoint(TL_angle1, 2);
-        motor_funBack2->SetSetpoint(TL_angle2, 2);
+        motor_funL->SetSetpoint(angleL, 4);
+        motor_funR->SetSetpoint(angleR, 4);
+        motor_funBack1->SetSetpoint(TL_angle1, 4);
+        motor_funBack2->SetSetpoint(TL_angle2, 4);
 
         bufferAcc = acc->GetMostRecentBuffer<UserAccelBufferPtr>();
         bufferGyro = gyro->GetMostRecentBuffer<UserGyroBufferPtr>();

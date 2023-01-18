@@ -26,6 +26,9 @@ SET(DEMOS
     flipper_test
     alacran_test
     alacran_x10_test
+    alacran_x10_step_test
+    alacran_x10_unstable_field
+    alacran_x10_Zaxis_test
     parallel_flipper_test
     demo_simple_flipper
     stl_load_test
@@ -151,7 +154,7 @@ endif()
 
 FOREACH(PROGRAM ${DEMOS})
 
-    ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp" header_random_step.h header_alacran.h header_alacran_x10.h)
+    ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp" header_random_step.h header_alacran.h header_alacran_x10.h header_alacran_x10_Zaxis)
 
 
 #--------------------------------------------------------------

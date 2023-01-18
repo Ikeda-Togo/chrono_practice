@@ -46,7 +46,7 @@ public:
         ISceneManager* msceneManager,  ///< the Irrlicht scene manager for 3d shapes
         IVideoDriver* mdriver,         ///< the Irrlicht video driver
         double mx,
-        double my,
+        double mz,
         bool fixflag
     ) {
         throttleL = throttleR = 0;  // initially, gas throttle is 0.
@@ -89,7 +89,8 @@ public:
             truss_mat,                                                       // no need for contact material
             0.0);                                                            // mesh sweep sphere radius
         //my_system.AddBody(Lflipper);
-        load_truss->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, rlwidth / 2));
+        load_truss->SetPos(ChVector<>(mx + passo / 2, rlwidth / 2, mz + radiustrack));
+        load_truss->SetRot(Q_from_AngAxis(-180 * CH_C_DEG_TO_RAD, VECT_X));
         load_truss->SetBodyFixed(fixflag);
         load_truss->SetMass(700);
         load_truss->SetInertiaXX(ChVector<>(13.8, 13.5, 10));
@@ -127,8 +128,8 @@ public:
             0);                                                            // mesh sweep sphere radius
 
         my_system.Add(wheelRF);
-        wheelRF->SetPos(ChVector<>(mx + passo, my + radiustrack, 0));
-        wheelRF->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
+        wheelRF->SetPos(ChVector<>(mx + passo, 0, mz + radiustrack));
+        wheelRF->SetRot(Q_from_AngAxis(0, VECT_Y));
         wheelRF->SetMass(9.0);
         wheelRF->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
 
@@ -146,7 +147,7 @@ public:
 
         // .. create the revolute joint between the wheel and the truss
         link_revoluteRF = chrono_types::make_shared<ChLinkLockRevolute>();  // right, front, upper, 1
-        link_revoluteRF->Initialize(wheelRF, truss, ChCoordsys<>(ChVector<>(mx + passo, my + radiustrack, 0), QUNIT));
+        link_revoluteRF->Initialize(wheelRF, truss, ChCoordsys<>(ChVector<>(mx + passo, 0, mz + radiustrack), Q_from_AngAxis(-90 * CH_C_DEG_TO_RAD, VECT_X)));
         my_system.AddLink(link_revoluteRF);
 
         // --- Left Front suspension ---
@@ -163,8 +164,8 @@ public:
             0);                                                            // mesh sweep sphere radius
 
         my_system.Add(wheelLF);
-        wheelLF->SetPos(ChVector<>(mx + passo, my + radiustrack, rlwidth));
-        wheelLF->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
+        wheelLF->SetPos(ChVector<>(mx + passo, rlwidth, mz + radiustrack));
+        wheelLF->SetRot(Q_from_AngAxis(0, VECT_Y));
         wheelLF->SetMass(9.0);
         wheelLF->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
         //wheelLF->AddAsset(color_wheel);
@@ -184,7 +185,7 @@ public:
         // .. create the revolute joint between the wheel and the truss
         link_revoluteLF = chrono_types::make_shared<ChLinkLockRevolute>();  // left, front, upper, 1
         link_revoluteLF->Initialize(wheelLF, truss,
-            ChCoordsys<>(ChVector<>(mx + passo, my + radiustrack, rlwidth), QUNIT));
+            ChCoordsys<>(ChVector<>(mx + passo, rlwidth, mz + radiustrack), Q_from_AngAxis(-90 * CH_C_DEG_TO_RAD, VECT_X)));
         my_system.AddLink(link_revoluteLF);
 
         // --- Right Back suspension ---
@@ -201,8 +202,8 @@ public:
             0);                                               // mesh sweep sphere radius
 
         my_system.Add(wheelRB);
-        wheelRB->SetPos(ChVector<>(mx, my + radiustrack, 0));
-        wheelRB->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
+        wheelRB->SetPos(ChVector<>(mx, 0, mz + radiustrack));
+        wheelRB->SetRot(Q_from_AngAxis(0, VECT_Y));
         wheelRB->SetMass(9.0);
         wheelRB->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
         //wheelRB->AddAsset(color_wheel);
@@ -221,7 +222,7 @@ public:
         link_motorRB = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
         link_motorRB->SetSpeedFunction(
             chrono_types::make_shared<ChFunction_Const>());  // actually, default function type
-        link_motorRB->Initialize(wheelRB, truss, ChFrame<>(ChVector<>(mx, my + radiustrack, 0), QUNIT));
+        link_motorRB->Initialize(wheelRB, truss, ChFrame<>(ChVector<>(mx, 0, mz + radiustrack), Q_from_AngAxis(-90 * CH_C_DEG_TO_RAD, VECT_X)));
         my_system.AddLink(link_motorRB);
 
         // --- Left Back suspension ---
@@ -238,8 +239,8 @@ public:
             0);                                               // mesh sweep sphere radius
 
         my_system.Add(wheelLB);
-        wheelLB->SetPos(ChVector<>(mx, my + radiustrack, rlwidth));
-        wheelLB->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
+        wheelLB->SetPos(ChVector<>(mx, rlwidth, mz + radiustrack));
+        wheelLB->SetRot(Q_from_AngAxis(0, VECT_Y));
         wheelLB->SetMass(9.0);
         wheelLB->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
         //wheelLB->AddAsset(color_wheel);
@@ -258,14 +259,14 @@ public:
         link_motorLB = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
         link_motorLB->SetSpeedFunction(
             chrono_types::make_shared<ChFunction_Const>());  // actually, default function type
-        link_motorLB->Initialize(wheelLB, truss, ChFrame<>(ChVector<>(mx, my + radiustrack, rlwidth), QUNIT));
+        link_motorLB->Initialize(wheelLB, truss, ChFrame<>(ChVector<>(mx, rlwidth, mz + radiustrack), Q_from_AngAxis(-90 * CH_C_DEG_TO_RAD, VECT_X)));
         my_system.AddLink(link_motorLB);
 
         //--- TRACKS ---
 
         // Load a triangle mesh for collision
 
-        IAnimatedMesh* irmesh_shoe_collision = msceneManager->getMesh(GetChronoDataFile("models/alacran_x10/shoe_1_collision.obj").c_str());
+        IAnimatedMesh* irmesh_shoe_collision = msceneManager->getMesh(GetChronoDataFile("models/alacran_x10/body_shoe_1_Zaxis_collision.obj").c_str());
 
         auto trimesh = chrono_types::make_shared<ChTriangleMeshSoup>();
         fillChTrimeshFromIrlichtMesh(trimesh.get(), irmesh_shoe_collision->getMesh(0));
@@ -279,15 +280,15 @@ public:
         for (int side = 0; side < 2; side++) {
             mx += shoelength;
 
-            double mz = 0;
+            double my = 0;
 
             if (side == 0)
-                mz = 0;
+                my = 0;
             else
-                mz = rlwidth;
+                my = rlwidth;
 
             position.Set(mx, my, mz);
-            rotation = QUNIT;
+            rotation = Q_from_AngAxis(0 * CH_C_DEG_TO_RAD, VECT_X);
 
 
             //------------------------------------
@@ -307,14 +308,14 @@ public:
             // Visualization:
             auto shoe_mesh = chrono_types::make_shared<ChTriangleMeshShape>();
             firstBodyShoe->AddAsset(shoe_mesh);
-            shoe_mesh->GetMesh()->LoadWavefrontMesh(GetChronoDataFile("models/alacran_x10/shoe_1.obj").c_str());
+            shoe_mesh->GetMesh()->LoadWavefrontMesh(GetChronoDataFile("models/alacran_x10/body_shoe_1_Zaxis.obj").c_str());
             shoe_mesh->GetMesh()->Transform(-mesh_displacement, ChMatrix33<>(1));
             shoe_mesh->SetVisible(true);
 
             // Visualize collision mesh
             auto shoe_coll_mesh = chrono_types::make_shared<ChTriangleMeshShape>();
             firstBodyShoe->AddAsset(shoe_coll_mesh);
-            shoe_coll_mesh->GetMesh()->LoadWavefrontMesh(GetChronoDataFile("models/alacran_x10/shoe_1_collision.obj").c_str());
+            shoe_coll_mesh->GetMesh()->LoadWavefrontMesh(GetChronoDataFile("models/alacran_x10/body_shoe_1_Zaxis_collision.obj").c_str());
             shoe_coll_mesh->GetMesh()->Transform(-mesh_displacement, ChMatrix33<>(1));
             shoe_coll_mesh->SetVisible(false);
 
@@ -353,14 +354,14 @@ public:
             // Visualization:
             auto shoe2_mesh = chrono_types::make_shared<ChTriangleMeshShape>();
             secondBodyShoe->AddAsset(shoe2_mesh);
-            shoe2_mesh->GetMesh()->LoadWavefrontMesh(GetChronoDataFile("models/alacran_x10/shoe_2.obj").c_str());
+            shoe2_mesh->GetMesh()->LoadWavefrontMesh(GetChronoDataFile("models/alacran_x10/body_shoe_2_Zaxis.obj").c_str());
             shoe2_mesh->GetMesh()->Transform(-mesh_displacement, ChMatrix33<>(1)); //ˆÊ’u‚ª‚¸‚ê‚Ä‚¢‚½‚ç‚±‚±‚ª‰ö‚µ‚¢
             shoe2_mesh->SetVisible(true);
 
             // Visualize collision mesh
             auto shoe2_coll_mesh = chrono_types::make_shared<ChTriangleMeshShape>();
             secondBodyShoe->AddAsset(shoe2_coll_mesh);
-            shoe2_coll_mesh->GetMesh()->LoadWavefrontMesh(GetChronoDataFile("models/alacran_x10/shoe_2_collision.obj").c_str());
+            shoe2_coll_mesh->GetMesh()->LoadWavefrontMesh(GetChronoDataFile("models/alacran_x10/body_shoe_2_Zaxis_collision.obj").c_str());
             shoe2_coll_mesh->GetMesh()->Transform(-mesh_displacement, ChMatrix33<>(1));
             shoe2_coll_mesh->SetVisible(false);
 
@@ -404,9 +405,9 @@ public:
                     double alpha = (CH_C_PI / ((double)(nwrap - 1.0))) * ((double)nshoe);
                     printf("alpha = %lf\r\n", alpha);
                     double lx = mx + shoelength + radiustrack * sin(alpha);
-                    double ly = my + radiustrack - radiustrack * cos(alpha);
-                    position.Set(lx, ly, mz);
-                    rotation = chrono::Q_from_AngAxis(alpha, ChVector<>(0, 0, 1));
+                    double ly = mz + radiustrack - radiustrack * cos(alpha);
+                    position.Set(lx, my, ly);
+                    rotation = chrono::Q_from_AngAxis(-alpha, ChVector<>(0, 1, 0));
                     auto rigidBodyShoe =
                         MakeShoe(previous_rigidBodyShoe, firstBodyShoe, position, rotation, my_system, joint_displacement);
 
@@ -416,9 +417,9 @@ public:
                     double alpha = (CH_C_PI / ((double)(nwrap - 1.0))) * ((double)nshoe);
                     printf("alpha = %lf\r\n", alpha);
                     double lx = mx + shoelength + radiustrack * sin(alpha);
-                    double ly = my + radiustrack - radiustrack * cos(alpha);
-                    position.Set(lx, ly, mz);
-                    rotation = chrono::Q_from_AngAxis(alpha, ChVector<>(0, 0, 1));
+                    double ly = mz + radiustrack - radiustrack * cos(alpha);
+                    position.Set(lx, my, ly);
+                    rotation = chrono::Q_from_AngAxis(-alpha, ChVector<>(0, 1, 0));
                     auto rigidBodyShoe =
                         MakeShoe(previous_rigidBodyShoe, secondBodyShoe, position, rotation, my_system, joint_displacement);
 
@@ -426,7 +427,7 @@ public:
                 }
             }
             for (int nshoe = (ntiles - 1); nshoe >= 0; nshoe--) {
-                position.Set(mx, my + 2 * radiustrack, mz);
+                position.Set(mx, my , mz + 2 * radiustrack);
 
                 if (nshoe % 2 == 1) {
                     auto rigidBodyShoe =
@@ -448,9 +449,9 @@ public:
                 double alpha = CH_C_PI + (CH_C_PI / ((double)(nwrap - 1.0))) * ((double)nshoe);
 
                 double lx = mx + 0 + radiustrack * sin(alpha);
-                double ly = my + radiustrack - radiustrack * cos(alpha);
-                position.Set(lx, ly, mz);
-                rotation = chrono::Q_from_AngAxis(alpha, ChVector<>(0, 0, 1));
+                double ly = mz + radiustrack - radiustrack * cos(alpha);
+                position.Set(lx, my, ly);
+                rotation = chrono::Q_from_AngAxis(-alpha, ChVector<>(0, 1, 0));
                 if (nshoe % 2 == 0) {
                     auto rigidBodyShoe =
                         MakeShoe(previous_rigidBodyShoe, firstBodyShoe, position, rotation, my_system, joint_displacement);
