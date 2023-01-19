@@ -1200,7 +1200,7 @@ int main(int argc, char* argv[]) {
 
     auto link_imu = chrono_types::make_shared<ChLinkLockRevolute>();  // left, front, upper, 1
     link_imu->Initialize(imumesh, mytank->truss,
-        ChCoordsys<>(tailmesh->GetPos(), QUNIT));
+        ChCoordsys<>(mytank->truss->GetPos(), QUNIT));
     link_imu->Lock(true);
     my_system.AddLink(link_imu);
 

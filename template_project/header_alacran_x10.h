@@ -60,7 +60,7 @@ public:
         //double shoe2length = 0.28; //ベルトユニットの長さ
         double shoemass = 3;       //ベルトユニットの重さ
         double radiustrack = 0.52; //クローラの半径
-        double wheeldiameter = 0.47 * 2; //プーリーの直径 初期0.045
+        double wheeldiameter = 0.475 * 2; //プーリーの直径 初期0.045
         int nwrap = 6;  //クローラの曲がってるとこのユニットの数
         int ntiles = 6; //まっすぐなとこのユニットの数
         double rlwidth = 2.16;
@@ -92,7 +92,9 @@ public:
         load_truss->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, rlwidth / 2));
         load_truss->SetBodyFixed(fixflag);
         load_truss->SetMass(700);
-        load_truss->SetInertiaXX(ChVector<>(13.8, 13.5, 10));
+        //std::cout << load_truss->GetInertiaXX() << std::endl;
+        load_truss->SetInertiaXX(ChVector<>(98.8427, 297.244, 355.741));
+        //load_truss->SetInertiaXX(ChVector<>(13.8, 13.5, 10));
         //load_truss->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
 
 
@@ -130,7 +132,8 @@ public:
         wheelRF->SetPos(ChVector<>(mx + passo, my + radiustrack, 0));
         wheelRF->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
         wheelRF->SetMass(9.0);
-        wheelRF->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        std::cout<< "main wheel ina" << wheelRF->GetInertiaXX() << std::endl;
+        wheelRF->SetInertiaXX(ChVector<>(8.37248 , 20.2067 , 20.2107));
 
         wheelRF->GetCollisionModel()->ClearModel();
         wheelRF->GetCollisionModel()->AddCylinder(wheel_mat, wheeldiameter / 2, wheeldiameter / 2, cyl_hthickness,
@@ -166,7 +169,7 @@ public:
         wheelLF->SetPos(ChVector<>(mx + passo, my + radiustrack, rlwidth));
         wheelLF->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
         wheelLF->SetMass(9.0);
-        wheelLF->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelLF->SetInertiaXX(ChVector<>(8.37248, 20.2067, 20.2107));
         //wheelLF->AddAsset(color_wheel);
 
         wheelLF->GetCollisionModel()->ClearModel();
@@ -204,7 +207,7 @@ public:
         wheelRB->SetPos(ChVector<>(mx, my + radiustrack, 0));
         wheelRB->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
         wheelRB->SetMass(9.0);
-        wheelRB->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelRB->SetInertiaXX(ChVector<>(8.37248, 20.2067, 20.2107));
         //wheelRB->AddAsset(color_wheel);
 
         wheelRB->GetCollisionModel()->ClearModel();
@@ -241,7 +244,7 @@ public:
         wheelLB->SetPos(ChVector<>(mx, my + radiustrack, rlwidth));
         wheelLB->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
         wheelLB->SetMass(9.0);
-        wheelLB->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelLB->SetInertiaXX(ChVector<>(8.37248, 20.2067, 20.2107));
         //wheelLB->AddAsset(color_wheel);
 
         wheelLB->GetCollisionModel()->ClearModel();
@@ -302,7 +305,10 @@ public:
             firstBodyShoe->SetMass(shoemass);
             firstBodyShoe->SetPos(position);
             firstBodyShoe->SetRot(rotation);
-            firstBodyShoe->SetInertiaXX(ChVector<>(0.1, 0.1, 0.1));
+            std::cout <<"shoe inertia" << firstBodyShoe->GetInertiaXX() << std::endl;
+            //firstBodyShoe->SetInertiaXX(ChVector<>(0.1, 0.1, 0.1));
+            firstBodyShoe->SetInertiaXX(ChVector<>(1.36831 , 17.8477 , 18.5056));
+            
 
             // Visualization:
             auto shoe_mesh = chrono_types::make_shared<ChTriangleMeshShape>();
@@ -319,8 +325,8 @@ public:
             shoe_coll_mesh->SetVisible(false);
 
             // Collision:
-            firstBodyShoe->GetCollisionModel()->SetSafeMargin(0.004);  // inward safe margin
-            firstBodyShoe->GetCollisionModel()->SetEnvelope(0.010);    // distance of the outward "collision envelope"
+            firstBodyShoe->GetCollisionModel()->SetSafeMargin(0.04);  // inward safe margin
+            firstBodyShoe->GetCollisionModel()->SetEnvelope(0.10);    // distance of the outward "collision envelope"
             firstBodyShoe->GetCollisionModel()->ClearModel();
             firstBodyShoe->GetCollisionModel()->AddTriangleMesh(chrono_types::make_shared<ChMaterialSurfaceNSC>(),
                 trimesh, false, false, mesh_displacement,
@@ -348,7 +354,7 @@ public:
             //secondBodyShoe->SetPos(position);
             secondBodyShoe->SetPos(ChVector<>(60, 2, 60));
             secondBodyShoe->SetRot(rotation);
-            secondBodyShoe->SetInertiaXX(ChVector<>(0.1, 0.1, 0.1));
+            secondBodyShoe->SetInertiaXX(ChVector<>(1.36831, 17.8477, 18.5056));
 
             // Visualization:
             auto shoe2_mesh = chrono_types::make_shared<ChTriangleMeshShape>();
@@ -365,8 +371,8 @@ public:
             shoe2_coll_mesh->SetVisible(false);
 
             // Collision:
-            secondBodyShoe->GetCollisionModel()->SetSafeMargin(0.004);  // inward safe margin
-            secondBodyShoe->GetCollisionModel()->SetEnvelope(0.010);    // distance of the outward "collision envelope"
+            secondBodyShoe->GetCollisionModel()->SetSafeMargin(0.04);  // inward safe margin
+            secondBodyShoe->GetCollisionModel()->SetEnvelope(0.10);    // distance of the outward "collision envelope"
             secondBodyShoe->GetCollisionModel()->ClearModel();
             secondBodyShoe->GetCollisionModel()->AddTriangleMesh(chrono_types::make_shared<ChMaterialSurfaceNSC>(),
                 trimesh, false, false, mesh_displacement,
@@ -402,7 +408,7 @@ public:
             for (int nshoe = 0; nshoe < nwrap; nshoe++) {
                 if (nshoe % 2 == 0) {
                     double alpha = (CH_C_PI / ((double)(nwrap - 1.0))) * ((double)nshoe);
-                    printf("alpha = %lf\r\n", alpha);
+                    //printf("alpha = %lf\r\n", alpha);
                     double lx = mx + shoelength + radiustrack * sin(alpha);
                     double ly = my + radiustrack - radiustrack * cos(alpha);
                     position.Set(lx, ly, mz);
@@ -414,7 +420,7 @@ public:
                 }
                 else {
                     double alpha = (CH_C_PI / ((double)(nwrap - 1.0))) * ((double)nshoe);
-                    printf("alpha = %lf\r\n", alpha);
+                    //printf("alpha = %lf\r\n", alpha);
                     double lx = mx + shoelength + radiustrack * sin(alpha);
                     double ly = my + radiustrack - radiustrack * cos(alpha);
                     position.Set(lx, ly, mz);
@@ -612,6 +618,8 @@ public:
             0.0);                                                            // mesh sweep sphere radius
         trussR->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, mz + (rlwidth / 2) - (clwidth / 2) + (shoethickness)));
         trussR->SetMass(100);
+        std::cout <<"truss ina" << trussR->GetInertiaXX() << std::endl;
+        //trussR->SetBodyFixed(true);
         //trussR->SetInertiaXX(ChVector<>(13.8, 13.5, 10));
 
 
@@ -681,8 +689,11 @@ public:
         my_system.Add(wheelRF);
         wheelRF->SetPos(ChVector<>(mx + passo, my + radiustrack, mz + rlwidth / 2 - clwidth / 2));
         wheelRF->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
-        wheelRF->SetMass(9.0);
-        wheelRF->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelRF->SetMass(5.0);
+        std::cout << "wheel ina" << wheelRF->GetInertiaXX() << std::endl;
+        //wheelRF->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelRF->SetInertiaXX(ChVector<>(4.30921 , 4.34636 , 7.26339));
+        
 
         wheelRF->GetCollisionModel()->ClearModel();
         wheelRF->GetCollisionModel()->AddCylinder(wheel_mat, wheeldiameter / 2, wheeldiameter / 2, cyl_hthickness,
@@ -717,8 +728,9 @@ public:
         my_system.Add(wheelLF);
         wheelLF->SetPos(ChVector<>(mx + passo, my + radiustrack, mz + rlwidth / 2 + clwidth / 2));
         wheelLF->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
-        wheelLF->SetMass(9.0);
-        wheelLF->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelLF->SetMass(5.0);
+        //wheelLF->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelLF->SetInertiaXX(ChVector<>(4.30921, 4.34636, 7.26339));
         wheelLF->AddAsset(color_wheel);
 
         wheelLF->GetCollisionModel()->ClearModel();
@@ -753,8 +765,9 @@ public:
         my_system.Add(wheelRB);
         wheelRB->SetPos(ChVector<>(mx, my + radiustrack, mz + rlwidth / 2 - clwidth / 2));
         wheelRB->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
-        wheelRB->SetMass(9.0);
-        wheelRB->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelRB->SetMass(5.0);
+        //wheelRB->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelRB->SetInertiaXX(ChVector<>(4.30921, 4.34636, 7.26339));
         wheelRB->AddAsset(color_wheel);
 
         wheelRB->GetCollisionModel()->ClearModel();
@@ -790,8 +803,9 @@ public:
         my_system.Add(wheelLB);
         wheelLB->SetPos(ChVector<>(mx, my + radiustrack, mz + rlwidth / 2 + clwidth / 2));
         wheelLB->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
-        wheelLB->SetMass(9.0);
-        wheelLB->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelLB->SetMass(5.0);
+        //wheelLB->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelLB->SetInertiaXX(ChVector<>(4.30921, 4.34636, 7.26339));
         wheelLB->AddAsset(color_wheel);
 
         wheelLB->GetCollisionModel()->ClearModel();
@@ -848,7 +862,7 @@ public:
             firstBodyShoe->SetMass(shoemass);
             firstBodyShoe->SetPos(position);
             firstBodyShoe->SetRot(rotation);
-            firstBodyShoe->SetInertiaXX(ChVector<>(0.1, 0.1, 0.1));
+            firstBodyShoe->SetInertiaXX(ChVector<>(1.31191 , 1.74964 , 2.03318));
 
             // Visualization:
             auto shoe_mesh = chrono_types::make_shared<ChTriangleMeshShape>();
@@ -865,8 +879,8 @@ public:
             shoe_coll_mesh->SetVisible(false);
 
             // Collision:
-            //firstBodyShoe->GetCollisionModel()->SetSafeMargin(0.004);  // inward safe margin
-            //firstBodyShoe->GetCollisionModel()->SetEnvelope(0.0010);    // distance of the outward "collision envelope"
+            firstBodyShoe->GetCollisionModel()->SetSafeMargin(0.04);  // inward safe margin
+            firstBodyShoe->GetCollisionModel()->SetEnvelope(0.010);    // distance of the outward "collision envelope"
 
             //firstBodyShoe->GetCollisionModel()->SetSafeMargin(0.004);  // inward safe margin
             //firstBodyShoe->GetCollisionModel()->SetEnvelope(0.005);    // distance of the outward "collision envelope"
@@ -898,7 +912,7 @@ public:
             //secondBodyShoe->SetPos(position);
             secondBodyShoe->SetPos(ChVector<>(60, 2, 60));
             secondBodyShoe->SetRot(rotation);
-            secondBodyShoe->SetInertiaXX(ChVector<>(0.1, 0.1, 0.1));
+            secondBodyShoe->SetInertiaXX(ChVector<>(1.31191, 1.74964, 2.03318));
 
             // Visualization:
             auto shoe2_mesh = chrono_types::make_shared<ChTriangleMeshShape>();
@@ -915,8 +929,8 @@ public:
             shoe2_coll_mesh->SetVisible(false);
 
             // Collision:
-            //secondBodyShoe->GetCollisionModel()->SetSafeMargin(0.004);  // inward safe margin
-            //secondBodyShoe->GetCollisionModel()->SetEnvelope(0.0010);    // distance of the outward "collision envelope"
+            secondBodyShoe->GetCollisionModel()->SetSafeMargin(0.04);  // inward safe margin
+            secondBodyShoe->GetCollisionModel()->SetEnvelope(0.10);    // distance of the outward "collision envelope"
 
             //secondBodyShoe->GetCollisionModel()->SetSafeMargin(0.004);  // inward safe margin
             //secondBodyShoe->GetCollisionModel()->SetEnvelope(0.005);    // distance of the outward "collision envelope"
@@ -955,7 +969,7 @@ public:
             for (int nshoe = 0; nshoe < nwrap; nshoe++) {
                 if (nshoe % 2 == 0) {
                     double alpha = (CH_C_PI / ((double)(nwrap - 1.0))) * ((double)nshoe);
-                    printf("alpha = %lf\r\n", alpha);
+                    //printf("alpha = %lf\r\n", alpha);
                     double lx = mx + shoelength + radiustrack * sin(alpha);
                     double ly = my + radiustrack - radiustrack * cos(alpha);
                     position.Set(lx, ly, mz);
@@ -967,7 +981,7 @@ public:
                 }
                 else {
                     double alpha = (CH_C_PI / ((double)(nwrap - 1.0))) * ((double)nshoe);
-                    printf("alpha = %lf\r\n", alpha);
+                    //printf("alpha = %lf\r\n", alpha);
                     double lx = mx + shoelength + radiustrack * sin(alpha);
                     double ly = my + radiustrack - radiustrack * cos(alpha);
                     position.Set(lx, ly, mz);
@@ -1146,7 +1160,7 @@ public:
         //double shoelength = 0.0375; //ベルトユニットの長さ
         double shoelength = 0.33; //ベルトユニットの長さ
         //double shoe2length = 0.28; //ベルトユニットの長さ
-        double shoemass = 1;       //ベルトユニットの重さ
+        double shoemass = 0.2;       //ベルトユニットの重さ
         double radiustrack = 0.52; //クローラの半径
         double wheeldiameter = 0.45 * 2; //プーリーの直径 初期0.045
         int nwrap = 6;  //クローラの曲がってるとこのユニットの数
@@ -1180,8 +1194,9 @@ public:
         //my_system.AddBody(Lflipper);
         load_truss->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, rlwidth / 2));
         load_truss->SetBodyFixed(fixflag);
+        load_truss->SetInertiaXX(ChVector<>(17.158 , 115.934 , 121.201));
         load_truss->SetMass(10);
-
+        std::cout << "tail truss inertia" << load_truss->GetInertiaXX() << std::endl;
 
         truss = load_truss;
 
@@ -1216,8 +1231,8 @@ public:
         my_system.Add(wheelRF);
         wheelRF->SetPos(ChVector<>(mx + passo, my + radiustrack, rlwidth / 2 - clwidth / 2));
         wheelRF->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
-        wheelRF->SetMass(9.0);
-        wheelRF->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelRF->SetMass(2.0);
+        //wheelRF->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
 
         wheelRF->GetCollisionModel()->ClearModel();
         wheelRF->GetCollisionModel()->AddCylinder(wheel_mat, wheeldiameter / 2, wheeldiameter / 2, cyl_hthickness,
@@ -1252,8 +1267,8 @@ public:
         my_system.Add(wheelLF);
         wheelLF->SetPos(ChVector<>(mx + passo, my + radiustrack, rlwidth / 2 + clwidth / 2));
         wheelLF->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
-        wheelLF->SetMass(9.0);
-        wheelLF->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelLF->SetMass(2.0);
+        //wheelLF->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
         //wheelLF->AddAsset(color_wheel);
 
         wheelLF->GetCollisionModel()->ClearModel();
@@ -1286,8 +1301,8 @@ public:
         my_system.Add(wheelRB);
         wheelRB->SetPos(ChVector<>(mx, my + radiustrack, rlwidth / 2 - clwidth / 2));
         wheelRB->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
-        wheelRB->SetMass(9.0);
-        wheelRB->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelRB->SetMass(2.0);
+        //wheelRB->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
         //wheelRB->AddAsset(color_wheel);
 
         wheelRB->GetCollisionModel()->ClearModel();
@@ -1321,8 +1336,8 @@ public:
         my_system.Add(wheelLB);
         wheelLB->SetPos(ChVector<>(mx, my + radiustrack, rlwidth / 2 + clwidth / 2));
         wheelLB->SetRot(Q_from_AngAxis(CH_C_PI / 2, VECT_X));
-        wheelLB->SetMass(9.0);
-        wheelLB->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
+        wheelLB->SetMass(2.0);
+        //wheelLB->SetInertiaXX(ChVector<>(1.2, 1.2, 1.2));
         //wheelLB->AddAsset(color_wheel);
 
         wheelLB->GetCollisionModel()->ClearModel();
@@ -1383,7 +1398,7 @@ public:
             firstBodyShoe->SetMass(shoemass);
             firstBodyShoe->SetPos(position);
             firstBodyShoe->SetRot(rotation);
-            firstBodyShoe->SetInertiaXX(ChVector<>(0.1, 0.1, 0.1));
+            firstBodyShoe->SetInertiaXX(ChVector<>(1.31191, 1.74964, 2.03318));
 
             // Visualization:
             auto shoe_mesh = chrono_types::make_shared<ChTriangleMeshShape>();
@@ -1400,8 +1415,8 @@ public:
             shoe_coll_mesh->SetVisible(false);
 
             // Collision:
-            firstBodyShoe->GetCollisionModel()->SetSafeMargin(0.004);  // inward safe margin
-            firstBodyShoe->GetCollisionModel()->SetEnvelope(0.010);    // distance of the outward "collision envelope"
+            firstBodyShoe->GetCollisionModel()->SetSafeMargin(0.04);  // inward safe margin
+            firstBodyShoe->GetCollisionModel()->SetEnvelope(0.10);    // distance of the outward "collision envelope"
             firstBodyShoe->GetCollisionModel()->ClearModel();
             firstBodyShoe->GetCollisionModel()->AddTriangleMesh(chrono_types::make_shared<ChMaterialSurfaceNSC>(),
                 trimesh, false, false, mesh_displacement,
@@ -1429,7 +1444,7 @@ public:
             //secondBodyShoe->SetPos(position);
             secondBodyShoe->SetPos(ChVector<>(60, 2, 60));
             secondBodyShoe->SetRot(rotation);
-            secondBodyShoe->SetInertiaXX(ChVector<>(0.1, 0.1, 0.1));
+            secondBodyShoe->SetInertiaXX(ChVector<>(1.31191, 1.74964, 2.03318));
 
             // Visualization:
             auto shoe2_mesh = chrono_types::make_shared<ChTriangleMeshShape>();
@@ -1446,8 +1461,8 @@ public:
             shoe2_coll_mesh->SetVisible(false);
 
             // Collision:
-            secondBodyShoe->GetCollisionModel()->SetSafeMargin(0.004);  // inward safe margin
-            secondBodyShoe->GetCollisionModel()->SetEnvelope(0.010);    // distance of the outward "collision envelope"
+            secondBodyShoe->GetCollisionModel()->SetSafeMargin(0.04);  // inward safe margin
+            secondBodyShoe->GetCollisionModel()->SetEnvelope(0.10);    // distance of the outward "collision envelope"
             secondBodyShoe->GetCollisionModel()->ClearModel();
             secondBodyShoe->GetCollisionModel()->AddTriangleMesh(chrono_types::make_shared<ChMaterialSurfaceNSC>(),
                 trimesh, false, false, mesh_displacement,
@@ -1483,7 +1498,7 @@ public:
             for (int nshoe = 0; nshoe < nwrap; nshoe++) {
                 if (nshoe % 2 == 0) {
                     double alpha = (CH_C_PI / ((double)(nwrap - 1.0))) * ((double)nshoe);
-                    printf("alpha = %lf\r\n", alpha);
+                    //printf("alpha = %lf\r\n", alpha);
                     double lx = mx + shoelength + radiustrack * sin(alpha);
                     double ly = my + radiustrack - radiustrack * cos(alpha);
                     position.Set(lx, ly, mz);
@@ -1495,7 +1510,7 @@ public:
                 }
                 else {
                     double alpha = (CH_C_PI / ((double)(nwrap - 1.0))) * ((double)nshoe);
-                    printf("alpha = %lf\r\n", alpha);
+                    //printf("alpha = %lf\r\n", alpha);
                     double lx = mx + shoelength + radiustrack * sin(alpha);
                     double ly = my + radiustrack - radiustrack * cos(alpha);
                     position.Set(lx, ly, mz);
