@@ -58,7 +58,7 @@ public:
         //double shoelength = 0.0375; //ベルトユニットの長さ
         double shoelength = 0.42; //ベルトユニットの長さ
         //double shoe2length = 0.28; //ベルトユニットの長さ
-        double shoemass = 3;       //ベルトユニットの重さ
+        double shoemass = 10;       //ベルトユニットの重さ
         double radiustrack = 0.52; //クローラの半径
         double wheeldiameter = 0.475 * 2; //プーリーの直径 初期0.045
         int nwrap = 6;  //クローラの曲がってるとこのユニットの数

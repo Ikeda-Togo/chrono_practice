@@ -37,7 +37,7 @@ private:
     double block_vol = 20;
 public:
     double size = 20;
-    double height = 2;
+    double height = 3;
     double thickness = 0.2;
 
     double block_size = 1;
@@ -172,12 +172,12 @@ public:
             for (int i = 0; i < size / block_size; i++) {
                 for (int j = 0; j < size / block_size; j++) {
                     double height = 0;
-                    double random_height = ChRandom();
+                    double random_height = ChRandom()*2;
                     if (i < (size/block_size)/2) {
-                        height = 2;
+                        height = 1;
                     }
                     else {
-                        height = 1;
+                        height = 1.5;
                     }
 
                     random_block[i][j] = chrono_types::make_shared<ChBodyEasyBox>(block_size, height+random_height, block_size, 30000, true, true, ground_mat);

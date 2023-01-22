@@ -299,7 +299,8 @@ int main(int argc, char* argv[]) {
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
-    application.AddTypicalCamera(core::vector3df(-10, 10, 1.4), core::vector3df(-5, 5, 1.4));
+    //application.AddTypicalCamera(core::vector3df(-10, 0, 1.4), core::vector3df(0, 0, 0));
+    application.AddTypicalCamera(core::vector3df(2, 6, 5), core::vector3df(2, 2, 5));
 
     // ..the world
     auto ground_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
@@ -314,6 +315,14 @@ int main(int argc, char* argv[]) {
     my_system.AddBody(my_ground);
 
     my_system.Set_G_acc({ 0, -9.81, 0 });
+
+    auto obj_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    obj_mat->SetFriction(0.8);
+    auto box = chrono_types::make_shared<ChBodyEasyBox>(1.5, 1.5, 10, 30000, true, true, obj_mat);
+    box->SetPos(ChVector<>(5, 0.25, 0));
+    box->SetCollide(true);
+    box->SetBodyFixed(true);
+    my_system.Add(box);
 
 
     //------------------------------------------
@@ -375,14 +384,15 @@ int main(int argc, char* argv[]) {
 
 
     auto shoe = chrono_types::make_shared<ChBodyEasyMesh>(               //
-        GetChronoDataFile("models/alacran_x10/shoe_flipper_1_collision.obj").c_str(),  // data file
-        10000,                                                          // density
+        GetChronoDataFile("models/alacran_x10/shoe_1_collision.obj").c_str(),  // data file
+        1000,                                                          // density
         true,                                                         // do not compute mass and inertia
         true,                                                          // visualization?
         false,                                                         // collision?
         nullptr,               // no need for contact material
         0);
     std::cout <<"shoe inertia" << shoe->GetInertiaXX() << std::endl;
+    std::cout << "shoe mass" << shoe->GetMass() << std::endl;
 
     //----------------------------
     //cleate tail mesh
@@ -477,7 +487,8 @@ int main(int argc, char* argv[]) {
 
     std::cout << 90 * CH_C_DEG_TO_RAD << std::endl;
     //auto imu_offset_pose = chrono::ChFrame<double>({ 0, 0, 0 }, Q_from_AngAxis(90 * CH_C_DEG_TO_RAD, VECT_X));
-    auto imu_offset_pose = chrono::ChFrame<double>({ 0, 0, 0 }, Q_from_AngAxis(90 * CH_C_DEG_TO_RAD, { 1, 1, 1 }));
+    //auto imu_offset_pose = chrono::ChFrame<double>({ 0, 0, 0 }, Q_from_AngAxis(90 * CH_C_DEG_TO_RAD, { 1, 1, 1 }));
+    auto imu_offset_pose = chrono::ChFrame<double>({ 0, 0, 0 }, Q_from_AngAxis(0, { 1, 0, 0 }));
     auto acc = chrono_types::make_shared<ChAccelerometerSensor>(imumesh,    // body to which the IMU is attached
         imu_update_rate,   // update rate
         imu_offset_pose,   // offset pose from body
@@ -536,7 +547,8 @@ int main(int argc, char* argv[]) {
         double t;
         double acc_data[3];
         double gyro_data[3];
-        double flipper_angle[2];
+        double link_angle[4]; //flipperL, flipperR, tail_link1, tail_link2
+        double motor_speed[2];
     } SHARED_MEMORY_DATA;
 
     SHARED_MEMORY_DATA* gMappingObject = NULL;
@@ -590,14 +602,14 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     //
     //application.SetTimestep(1);
-    application.SetTimestep(0.01);
+    application.SetTimestep(0.02);
     application.SetTryRealtime(true);
 
     while (application.GetDevice()->run()) {
         double t = my_system.GetChTime();
         // Irrlicht must prepare frame to draw
         application.BeginScene(true, true, SColor(255, 140, 161, 192));
-        //application.GetActiveCamera()->setTarget(core::vector3dfCH(mytank->truss->GetPos()));
+        application.GetActiveCamera()->setTarget(core::vector3dfCH(mytank->truss->GetPos()));
 
 
         // .. draw solid 3D items (boxes, cylinders, shapes) belonging to Irrlicht scene, if any
@@ -612,13 +624,28 @@ int main(int argc, char* argv[]) {
         if(receiver.checkbox_linkLocked->isChecked()){
             motor_funL->SetSetpoint(angleL, 2);
             motor_funR->SetSetpoint(angleR, 2);
+            motor_funBack1->SetSetpoint(TL_angle1, 2);
+            motor_funBack2->SetSetpoint(TL_angle2, 2);
         }
         else {
-            motor_funL->SetSetpoint(pMemory->flipper_angle[0], 2);
-            motor_funR->SetSetpoint(pMemory->flipper_angle[1], 2);
+            motor_funL->SetSetpoint(pMemory->link_angle[0], 100);
+            motor_funR->SetSetpoint(pMemory->link_angle[1], 100);
+            motor_funBack1->SetSetpoint(pMemory->link_angle[2], 100);
+            motor_funBack2->SetSetpoint(pMemory->link_angle[3], 100);
+            auto mfun = std::static_pointer_cast<ChFunction_Const>(mytank->link_motorLB->GetSpeedFunction());
+            mfun->Set_yconst(pMemory->motor_speed[0]);
+            mfun = std::static_pointer_cast<ChFunction_Const>(myflipper->link_motorLB->GetSpeedFunction());
+            mfun->Set_yconst(pMemory->motor_speed[0]);
+            mfun = std::static_pointer_cast<ChFunction_Const>(mytank->link_motorRB->GetSpeedFunction());
+            mfun->Set_yconst(pMemory->motor_speed[1]);
+            mfun = std::static_pointer_cast<ChFunction_Const>(myflipper->link_motorRB->GetSpeedFunction());
+            mfun->Set_yconst(pMemory->motor_speed[1]);
+            mfun = std::static_pointer_cast<ChFunction_Const>(mybackunit->link_motorRB->GetSpeedFunction());
+            mfun->Set_yconst((pMemory->motor_speed[0] + pMemory->motor_speed[1]) / 2.0);
+            mfun = std::static_pointer_cast<ChFunction_Const>(mybackunit->link_motorLB->GetSpeedFunction());
+            mfun->Set_yconst((pMemory->motor_speed[0] + pMemory->motor_speed[1]) / 2.0);
         }
-        motor_funBack1->SetSetpoint(TL_angle1, 2);
-        motor_funBack2->SetSetpoint(TL_angle2, 2);
+        
 
         bufferAcc = acc->GetMostRecentBuffer<UserAccelBufferPtr>();
         bufferGyro = gyro->GetMostRecentBuffer<UserGyroBufferPtr>();

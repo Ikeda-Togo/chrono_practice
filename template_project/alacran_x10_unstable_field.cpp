@@ -69,14 +69,19 @@ enum StepType {
 class MyEventReceiver : public IEventReceiver {
 public:
     s32 pos_speed = 50, pos_handle = 50;
-    MyEventReceiver(ChIrrAppInterface* myapp, 
-        MySimpleTank* atank, 
-        MySimpleFlipper* aflipper, 
-        MySimpleBackunit* abackunit, 
-        double* angleL, 
+    bool handle_check = false;
+    IGUICheckBox* checkbox_linkLocked;
+
+
+    MyEventReceiver(ChIrrAppInterface* myapp,
+        MySimpleTank* atank,
+        MySimpleFlipper* aflipper,
+        MySimpleBackunit* abackunit,
+        double* angleL,
         double* angleR,
         double* TL_angle1,
-        double* TL_angle2) {
+        double* TL_angle2
+    ) {
         // store pointer application
         application = myapp;
         // store pointer to other stuff
@@ -87,6 +92,8 @@ public:
         mangleR = angleR;
         mTL_angle1 = TL_angle1;
         mTL_angle2 = TL_angle2;
+
+
 
 
         // ..add a GUI slider to control throttle left via mouse
@@ -122,7 +129,7 @@ public:
         scrollbar_flipperR->setPos(50);
         text_flipperR =
             application->GetIGUIEnvironment()->addStaticText(L"FlipperR ", rect<s32>(650, 95, 750, 110), false);
-    
+
         // ..add a GUI slider to control throttle left via mouse
         scrollbar_TL1 =
             application->GetIGUIEnvironment()->addScrollBar(true, rect<s32>(750, 20, 890, 35), 0, 105);
@@ -140,7 +147,7 @@ public:
             application->GetIGUIEnvironment()->addStaticText(L"tail link 2 ", rect<s32>(900, 45, 1000, 60), false);
 
         // ..add a GUI checkbox
-        checkbox_linkLocked = 
+        checkbox_linkLocked =
             application->GetIGUIEnvironment()->addCheckBox(false, rect<s32>(900, 70, 1000, 85), 0, 2110);
     }
 
@@ -176,9 +183,9 @@ public:
 
                     //後部ユニットの速度
                     mfun = std::static_pointer_cast<ChFunction_Const>(mbackunit->link_motorRB->GetSpeedFunction());
-                    mfun->Set_yconst((newthrottleR * 6 + newthrottleL * 6)/2);
+                    mfun->Set_yconst((newthrottleR * 6 + newthrottleL * 6) / 2);
                     mfun = std::static_pointer_cast<ChFunction_Const>(mbackunit->link_motorLB->GetSpeedFunction());
-                    mfun->Set_yconst((newthrottleR * 6 + newthrottleL * 6)/2);
+                    mfun->Set_yconst((newthrottleR * 6 + newthrottleL * 6) / 2);
 
                     return true;
                 }
@@ -209,7 +216,6 @@ public:
                 if (id == 103) {  // id of 'throttleL' slider..
                     s32 pos = ((IGUIScrollBar*)event.GUIEvent.Caller)->getPos();
                     *mangleL = CH_C_PI * (pos - 50) / 100;
-                    //*mangleR = CH_C_PI * (pos - 50) / 100;
 
                     return true;
                 }
@@ -235,12 +241,13 @@ public:
 
             case gui::EGET_CHECKBOX_CHANGED:
                 if (id == 2110) {
+                    handle_check;
                     auto mfun = std::static_pointer_cast<ChFunction_Const>(mtank->link_motorLB->GetSpeedFunction());
                     mfun->Set_yconst(0);
                     mfun = std::static_pointer_cast<ChFunction_Const>(mflipper->link_motorLB->GetSpeedFunction());
                     mfun->Set_yconst(0);
 
-            
+
                     mfun = std::static_pointer_cast<ChFunction_Const>(mtank->link_motorRB->GetSpeedFunction());
                     mfun->Set_yconst(0);
                     mfun = std::static_pointer_cast<ChFunction_Const>(mflipper->link_motorRB->GetSpeedFunction());
@@ -279,7 +286,7 @@ private:
     IGUIScrollBar* scrollbar_TL1;
     IGUIStaticText* text_TL2;
     IGUIScrollBar* scrollbar_TL2;
-    IGUICheckBox* checkbox_linkLocked;
+
 };
 
 
@@ -289,17 +296,17 @@ int main(int argc, char* argv[]) {
     ChSystemNSC my_system;
     my_system.SetCollisionSystemType(collision_type);
 
-    ChIrrApp application(&my_system, L"Modeling a simplified   tank", core::dimension2d<u32>(1200, 800));
+    ChIrrApp application(&my_system, L"Modeling a simplified   tank", core::dimension2d<u32>(1600, 800));
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
-    application.AddTypicalCamera(core::vector3df(2, 4, 15), core::vector3df(2, 5, 5));
+    application.AddTypicalCamera(core::vector3df(-10, 10, 1.4), core::vector3df(0, 3, 0));
 
     // ..the world
     auto ground_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
-    ground_mat->SetFriction(0.8);
-    ground_mat->SetRollingFriction(0.003);
-    ground_mat->SetSpinningFriction(0.003);
+    ground_mat->SetFriction(1.0);
+    //ground_mat->SetRollingFriction(0.003);
+    //ground_mat->SetSpinningFriction(0.003);
 
     auto my_ground = chrono_types::make_shared<ChBodyEasyBox>(60, 2, 60, 1000, true, true, ground_mat);
     my_ground->SetPos(ChVector<>(0, -1, 0));
@@ -309,21 +316,6 @@ int main(int argc, char* argv[]) {
 
     my_system.Set_G_acc({ 0, -9.81, 0 });
 
-    //---------------------
-    // cleate field ofject
-    //--------------------
-
-    StepType step_type = STEP_RANDOM;
-    //RandomStep* myrandomstep = new RandomStep(my_system, step_type);
-
-    //auto obj_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
-    //obj_mat->SetFriction(0.5);
-    //auto box = chrono_types::make_shared<ChBodyEasyBox>(1.5, 1.5, 10, 30000, true, true, obj_mat);
-    //box->SetPos(ChVector<>(5, 0.25, 0));
-    //box->SetCollide(true);
-    //box->SetBodyFixed(true);
-    //my_system.Add(box);
-
 
     //------------------------------------------
     // create robot model
@@ -331,27 +323,27 @@ int main(int argc, char* argv[]) {
     //
     // ..the tank (this class - see above - is a 'set' of bodies and links, automatically added at creation)
 
+    //double model_height = 0;
     double model_height = 5;
-    double mx = -6;
     //bool fixflag = true;
     bool fixflag = false;
 
 
-    MySimpleTank* mytank = new MySimpleTank(my_system, application.GetSceneManager(), application.GetVideoDriver(), mx, model_height,fixflag);
+    MySimpleTank* mytank = new MySimpleTank(my_system, application.GetSceneManager(), application.GetVideoDriver(), -5, model_height, fixflag);
     ChVector<> center_pos = mytank->wheelLB->GetPos() - mytank->wheelLF->GetPos();
 
     printf("tred is %lf\r\n", mytank->wheelLF->GetPos().z() /*- mytank->wheelRF->GetPos().z()*/);
-    
+
     MySimpleFlipper* myflipper = new MySimpleFlipper(
         my_system,
         application.GetSceneManager(),
         application.GetVideoDriver(),
         mytank->wheelLF->GetPos().x(),
-         model_height, 
+        model_height,
         0
     );
 
-    MySimpleBackunit* mybackunit = new MySimpleBackunit(my_system, application.GetSceneManager(), application.GetVideoDriver(), mx-1.47-1-1.5, model_height, false);
+    MySimpleBackunit* mybackunit = new MySimpleBackunit(my_system, application.GetSceneManager(), application.GetVideoDriver(), -5 - 1.47 - 1 - 1.5, model_height, false);
 
 
     // Create the motor
@@ -369,7 +361,7 @@ int main(int argc, char* argv[]) {
 
 
     // Create the motor
-    auto rotmotor2= chrono_types::make_shared<ChLinkMotorRotationAngle>();
+    auto rotmotor2 = chrono_types::make_shared<ChLinkMotorRotationAngle>();
 
     // Connect the rotor and the stator and add the motor to the system:
     rotmotor2->Initialize(myflipper->trussR,                // body A (slave)
@@ -382,6 +374,16 @@ int main(int argc, char* argv[]) {
     rotmotor2->SetAngleFunction(motor_funR);
 
 
+
+    auto shoe = chrono_types::make_shared<ChBodyEasyMesh>(               //
+        GetChronoDataFile("models/alacran_x10/shoe_flipper_1_collision.obj").c_str(),  // data file
+        10000,                                                          // density
+        true,                                                         // do not compute mass and inertia
+        true,                                                          // visualization?
+        false,                                                         // collision?
+        nullptr,               // no need for contact material
+        0);
+    std::cout << "shoe inertia" << shoe->GetInertiaXX() << std::endl;
 
     //----------------------------
     //cleate tail mesh
@@ -398,7 +400,9 @@ int main(int argc, char* argv[]) {
     //tailmesh->SetBodyFixed(true);
     my_system.Add(tailmesh);
     tailmesh->SetRot(Q_from_AngAxis(0, VECT_X));
-    tailmesh->SetPos(mytank->truss->GetPos() + ChVector<>(-1.47-0.865, 0, 0));
+    tailmesh->SetPos(mytank->truss->GetPos() + ChVector<>(-1.47 - 0.865, 0, 0));
+    std::cout << "tail inertia" << tailmesh->GetInertiaXX() << std::endl;
+    tailmesh->SetInertiaXX(ChVector<>(3.64473, 68.5446, 70.9417));
     //tailmesh->SetPos(mytank->wheelLB->GetPos());
     tailmesh->SetMass(10);
 
@@ -407,8 +411,8 @@ int main(int argc, char* argv[]) {
     color_tail->SetFading(0.5f);
     tailmesh->AddAsset(color_tail);
 
-    //std::cout << mytank->truss->GetPos() << std::endl;
-    
+    std::cout << mytank->truss->GetPos() << std::endl;
+
     // Create the motor
     auto tail_link1 = chrono_types::make_shared<ChLinkMotorRotationAngle>();
 
@@ -417,26 +421,30 @@ int main(int argc, char* argv[]) {
         mytank->truss,               // body B (master)
         ChFrame<>(mytank->truss->GetPos() + ChVector<>(-1.47, 0, 0))
     );
-    
+
     my_system.Add(tail_link1);
 
     auto motor_funBack1 = chrono_types::make_shared<ChFunction_Setpoint>();
     tail_link1->SetAngleFunction(motor_funBack1);
 
 
-    
+
     auto tail_link2 = chrono_types::make_shared<ChLinkMotorRotationAngle>();  // left, front, upper, 1
-    
-    tail_link2->Initialize(tailmesh, 
+
+    tail_link2->Initialize(tailmesh,
         mybackunit->truss,
-        ChFrame<>(mytank->truss->GetPos() + ChVector<>(-1.47-1.73, 0, 0))
+        ChFrame<>(mytank->truss->GetPos() + ChVector<>(-1.47 - 1.73, 0, 0))
     );
-    
+
     my_system.AddLink(tail_link2);
 
     auto motor_funBack2 = chrono_types::make_shared<ChFunction_Setpoint>();
     tail_link2->SetAngleFunction(motor_funBack2);
 
+
+    //--------------------
+    //------create imu---
+    //-------------------
 
     auto imumesh = chrono_types::make_shared<ChBodyEasyBox>(0.5, 0.4, 0.5, 1000, true, false, chrono_types::make_shared<ChMaterialSurfaceNSC>());
     imumesh->SetPos(mytank->truss->GetPos() + ChVector<>(0, 0.45, 0));
@@ -447,7 +455,7 @@ int main(int argc, char* argv[]) {
 
     auto link_imu = chrono_types::make_shared<ChLinkLockRevolute>();  // left, front, upper, 1
     link_imu->Initialize(imumesh, mytank->truss,
-        ChCoordsys<>(tailmesh->GetPos(), QUNIT));
+        ChCoordsys<>(mytank->truss->GetPos(), QUNIT));
     link_imu->Lock(true);
     my_system.AddLink(link_imu);
 
@@ -489,7 +497,7 @@ int main(int argc, char* argv[]) {
     gyro->SetLag(imu_lag);
     gyro->SetCollectionWindow(imu_collection_time);
     gyro->PushFilter(chrono_types::make_shared<ChFilterGyroAccess>());  // Add a filter to access the imu data
-    manager->AddSensor(gyro);                                           // Add the IMU sensor to the sensor manager
+    manager->AddSensor(gyro);                                        // Add the IMU sensor to the sensor manager
 
     UserAccelBufferPtr bufferAcc;
     UserGyroBufferPtr bufferGyro;
@@ -529,6 +537,7 @@ int main(int argc, char* argv[]) {
         double t;
         double acc_data[3];
         double gyro_data[3];
+        double flipper_angle[2];
     } SHARED_MEMORY_DATA;
 
     SHARED_MEMORY_DATA* gMappingObject = NULL;
@@ -536,6 +545,13 @@ int main(int argc, char* argv[]) {
     HANDLE hSharedMemory = CreateFileMapping(NULL, NULL, PAGE_READWRITE, NULL, sizeof(SHARED_MEMORY_DATA), name);
     auto pMemory = (SHARED_MEMORY_DATA*)MapViewOfFile(hSharedMemory, FILE_MAP_ALL_ACCESS, NULL, NULL, sizeof(SHARED_MEMORY_DATA));
 
+
+    //---------------------
+    // cleate field ofject
+    //--------------------
+
+    StepType step_type = STEP_RANDOM ;
+    RandomStep* myrandomstep = new RandomStep(my_system, step_type);
 
 
     //
@@ -545,7 +561,7 @@ int main(int argc, char* argv[]) {
     double angleL = 0;
     double angleR = 0;
     double TL_angle1 = CH_C_PI * (25 - 50) / 100;
-    double TL_angle2 = CH_C_PI * (90 - 50) / 100;
+    double TL_angle2 = CH_C_PI * (100 - 50) / 100;
     bool linklocked = false;
 
     // Create a ChFunction to be used for the ChLinkMotorRotationAngle
@@ -561,7 +577,7 @@ int main(int argc, char* argv[]) {
     // Use this function for 'converting' assets into Irrlicht meshes
     application.AssetUpdateAll();
 
-    MyEventReceiver receiver(&application,mytank, myflipper, mybackunit, &angleL, &angleR, &TL_angle1, &TL_angle2);
+    MyEventReceiver receiver(&application, mytank, myflipper, mybackunit, &angleL, &angleR, &TL_angle1, &TL_angle2);
     application.SetUserEventReceiver(&receiver);
 
     //
@@ -594,10 +610,16 @@ int main(int argc, char* argv[]) {
 
         //std::cout << angle << std::endl;
         //msineangle->Set_yconst(angle);
-        motor_funL->SetSetpoint(angleL, 4);
-        motor_funR->SetSetpoint(angleR, 4);
-        motor_funBack1->SetSetpoint(TL_angle1, 4);
-        motor_funBack2->SetSetpoint(TL_angle2, 4);
+        if (receiver.checkbox_linkLocked->isChecked()) {
+            motor_funL->SetSetpoint(angleL, 2);
+            motor_funR->SetSetpoint(angleR, 2);
+        }
+        else {
+            motor_funL->SetSetpoint(pMemory->flipper_angle[0], 2);
+            motor_funR->SetSetpoint(pMemory->flipper_angle[1], 2);
+        }
+        motor_funBack1->SetSetpoint(TL_angle1, 2);
+        motor_funBack2->SetSetpoint(TL_angle2, 2);
 
         bufferAcc = acc->GetMostRecentBuffer<UserAccelBufferPtr>();
         bufferGyro = gyro->GetMostRecentBuffer<UserGyroBufferPtr>();
@@ -607,16 +629,6 @@ int main(int argc, char* argv[]) {
             acc_data[1] = bufferAcc->Buffer[0].Y;
             acc_data[2] = bufferAcc->Buffer[0].Z;
             GyroData gyro_data = bufferGyro->Buffer[0];
-            
-            //ss[0].str(L"");
-            //ss[1].str(L"");
-            //ss[2].str(L"");
-            //ss[0] << gyro_data.Roll;
-            //ss[1] << gyro_data.Pitch;
-            //ss[2] << gyro_data.Yaw;
-            //acc_data_text[0]->setText(ss[0].str().c_str());
-            //acc_data_text[1]->setText(ss[1].str().c_str());
-            //acc_data_text[2]->setText(ss[2].str().c_str());
 
             for (int i = 0; i < 3; i++) {
                 ss[i].str(L"");
@@ -631,12 +643,12 @@ int main(int argc, char* argv[]) {
 
             //imu_csv << std::fixed << std::setprecision(6);
             pMemory->t = t;
-            pMemory->acc_data[0] = acc_data[0]/10.0;
-            pMemory->acc_data[1] = -acc_data[1]/10.0;
-            pMemory->acc_data[2] = acc_data[2]/10.0;
-            pMemory->gyro_data[0] = gyro_data.Roll; 
-            pMemory->gyro_data[1] = gyro_data.Pitch;
-            pMemory->gyro_data[2] = gyro_data.Yaw;
+            pMemory->acc_data[0] = -acc_data[0] / 10.0;
+            pMemory->acc_data[1] = -acc_data[2] / 10.0;
+            pMemory->acc_data[2] = -acc_data[1] / 10.0;
+            pMemory->gyro_data[0] = gyro_data.Roll;
+            pMemory->gyro_data[1] = gyro_data.Yaw;
+            pMemory->gyro_data[2] = gyro_data.Pitch;
             imu_last_launch = bufferGyro->LaunchedCount;
             //printf("%0.4f %0.4f %0.4f \n", acc_data.X, acc_data.Y, acc_data.Z);
         }

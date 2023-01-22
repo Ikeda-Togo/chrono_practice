@@ -177,7 +177,7 @@ public:
         //my_system.AddBody(Lflipper);
         load_truss->SetPos(ChVector<>(mx + passo / 2, my + radiustrack, rlwidth / 2));
         load_truss->SetMass(350);
-
+        std::cout << load_truss->GetInertiaXX() << std::endl;
 
         truss = load_truss;
         
